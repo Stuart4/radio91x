@@ -40,7 +40,7 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
             try {
                 SAXParser sp = spf.newSAXParser();
                 DefaultHand hand = new DefaultHand();
-                sp.parse("http://np.tritondigital.com/public/nowplaying?mountName=XTRAFM&numberToFetch=1", hand);
+                sp.parse("http://np.tritondigital.com/public/nowplaying?mountName=XTRAFM&numberToFetch=1&random=" + System.currentTimeMillis() / 1000L , hand);
                 if (currentSong == null || !currentSong.equals(hand.songInfo)) {
                     currentSong = hand.songInfo;
                     return currentSong;
@@ -166,7 +166,7 @@ class JParser extends AsyncTask<SongInfo, Void, SongInfo> {
             BufferedReader reader = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent(), "UTF-8"));
             String line;
             String json = new String();
-            while ((line = reader.readLine()).length() > 0) {
+            while ((line = reader.readLine()) != null) {
                 json += line;
             }
             JSONObject jsonObject = new JSONObject(json);
