@@ -17,12 +17,15 @@ public class Streamer {
     private MediaPlayer mediaPlayer;
     private boolean playing = false;
     private boolean prepared = false;
+    private boolean preparing = false;
     private ProgressBar progressBar;
     private ImageView playPause;
+    Context context;
 
     public Streamer(Context context, final ProgressBar progressBar, final ImageView playPause) {
         this.progressBar = progressBar;
         this.playPause = playPause;
+        this.context = context;
         playPause.setImageResource(android.R.drawable.ic_media_pause);
         Uri.Builder uBuilder = new Uri.Builder();
         uBuilder.scheme("http")
@@ -31,34 +34,40 @@ public class Streamer {
                 .appendPath("livestream-redirect")
                 .appendPath("XTRAFM.mp3");
         uri = uBuilder.build();
-        mediaPlayer = new MediaPlayer();
-        try {
-            mediaPlayer.setDataSource(context, uri);
-            mediaPlayer.prepareAsync();
-            progressBar.setIndeterminate(true);
-            progressBar.setVisibility(View.VISIBLE);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(MediaPlayer mp) {
-                prepared = true;
-                mp.start();
-                playing = true;
-                progressBar.setIndeterminate(false);
-                progressBar.setVisibility(View.GONE);
-                playPause.setImageResource(android.R.drawable.ic_media_pause);
-            }
-        });
+        play();
     }
 
     public void play() {
         if (prepared) {
             mediaPlayer.start();
             playing = true;
-            System.out.println(mediaPlayer.getTrackInfo());
             playPause.setImageResource(android.R.drawable.ic_media_pause);
+        } else if (!preparing) {
+            progressBar.setVisibility(View.VISIBLE);
+            progressBar.setIndeterminate(true);
+            mediaPlayer = null;
+            mediaPlayer = new MediaPlayer();
+            try {
+                mediaPlayer.setDataSource(context, uri);
+                mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                    @Override
+                    public void onPrepared(MediaPlayer mp) {
+                        prepared = true;
+                        mp.start();
+                        preparing = false;
+                        playing = true;
+                        progressBar.setIndeterminate(false);
+                        progressBar.setVisibility(View.GONE);
+                        playPause.setImageResource(android.R.drawable.ic_media_pause);
+                    }
+                });
+                mediaPlayer.prepareAsync();
+                preparing = true;
+                progressBar.setIndeterminate(true);
+                progressBar.setVisibility(View.VISIBLE);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         //System.out.println(mediaPlayer.getTrackInfo()[0]);
 
@@ -85,6 +94,7 @@ public class Streamer {
     public void stop() {
         if (!prepared) return;
         mediaPlayer.stop();
+        mediaPlayer.reset();
         prepared = false;
         playing = false;
         progressBar.setVisibility(View.GONE);

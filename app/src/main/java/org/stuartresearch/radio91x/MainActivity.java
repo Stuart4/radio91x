@@ -30,22 +30,22 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         ImageView playPause = (ImageView) findViewById(R.id.controlImageView);
         final Streamer streamer = new Streamer(getApplicationContext(), (ProgressBar) findViewById(R.id.progressBar), playPause);
-        streamer.play();
+        albumView = (ImageView) findViewById(R.id.albumImageView);
+        songText = (TextView) findViewById(R.id.songNameTextView);
+        artistText = (TextView) findViewById(R.id.ArtistNameTextView);
         playPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (streamer.isPlaying()) {
-                    streamer.pause();
+                    streamer.stop();
+                    stopParser();
                 } else {
                     streamer.play();
+                    startParser();
                 }
             }
         });
-        albumView = (ImageView) findViewById(R.id.albumImageView);
-        songText = (TextView) findViewById(R.id.songNameTextView);
-        artistText = (TextView) findViewById(R.id.ArtistNameTextView);
-        parser = new Parser(this);
-        parser.execute();
+        startParser();
     }
 
     @Override
@@ -86,5 +86,16 @@ public class MainActivity extends Activity {
         parser = new Parser(this);
         parser.currentSong = songInfo;
         parser.execute();
+    }
+
+    public void startParser() {
+        parser = new Parser(this);
+        parser.execute();
+        parser.running = true;
+
+    }
+
+    public void stopParser() {
+        parser.running = false;
     }
 }
