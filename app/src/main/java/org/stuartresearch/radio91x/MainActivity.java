@@ -71,6 +71,12 @@ public class MainActivity extends Activity {
     }
 
     public void updateSongInfo(SongInfo songInfo) {
+        if (songInfo == null) {
+            parser = new Parser(this);
+            parser.currentSong = null;
+            parser.execute();
+            return;
+        }
         songText.setText(songInfo.songName);
         artistText.setText(songInfo.artistName);
         if (songInfo.imageUrl.length() > 0) {

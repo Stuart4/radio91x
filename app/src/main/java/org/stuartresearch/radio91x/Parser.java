@@ -1,6 +1,5 @@
 package org.stuartresearch.radio91x;
 
-import android.content.Context;
 import android.os.AsyncTask;
 
 import org.apache.http.HttpResponse;
@@ -40,7 +39,7 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
             try {
                 SAXParser sp = spf.newSAXParser();
                 DefaultHand hand = new DefaultHand();
-                sp.parse("http://np.tritondigital.com/public/nowplaying?mountName=XTRAFM&numberToFetch=1&random=" + System.currentTimeMillis() / 1000L , hand);
+                sp.parse("http://np.tritondigital.com/public/nowplaying?mountName=XTRAFM&numberToFetch=1&random=" + System.currentTimeMillis(), hand);
                 if (currentSong == null || !currentSong.equals(hand.songInfo)) {
                     currentSong = hand.songInfo;
                     return currentSong;
@@ -176,6 +175,8 @@ class JParser extends AsyncTask<SongInfo, Void, SongInfo> {
         } catch (IOException e) {
             e.printStackTrace();
         } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (IllegalStateException e) {
             e.printStackTrace();
         }
         return params[0];
