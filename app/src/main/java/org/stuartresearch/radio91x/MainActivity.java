@@ -95,7 +95,6 @@ public class MainActivity extends ActionBarActivity {
             Picasso.with(this).load(songInfo.imageUrl).into(albumView);
             albumView.setVisibility(View.VISIBLE);
         }
-        this.songStack.push(songInfo);
         parser = new Parser(this);
         parser.currentSong = songInfo;
         parser.execute();
