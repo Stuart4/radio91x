@@ -48,11 +48,11 @@ public class MainActivity extends ActionBarActivity {
                 if (streamer.isPlaying()) {
                     streamer.stop();
                     stopParser();
-                    playPause.setImageResource(android.R.drawable.ic_media_play);
+                    playPause.setImageResource(R.drawable.ic_play_arrow_black_18dp);
                 } else {
                     streamer.play();
                     startParser();
-                    playPause.setImageResource(android.R.drawable.ic_media_pause);
+                    playPause.setImageResource(R.drawable.ic_pause_black_18dp);
                 }
             }
         });

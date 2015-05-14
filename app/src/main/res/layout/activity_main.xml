@@ -86,7 +86,7 @@
                     android:layout_gravity="center_vertical"
                     android:layout_alignParentRight="true"
                     android:layout_weight="0"
-                    android:src="@android:drawable/ic_media_play"/>
+                    android:src="@drawable/ic_pause_black_18dp"/>
             </LinearLayout>
         </LinearLayout>
 

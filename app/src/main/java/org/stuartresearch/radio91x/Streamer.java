@@ -26,7 +26,6 @@ public class Streamer {
         this.progressBar = progressBar;
         this.playPause = playPause;
         this.context = context;
-        playPause.setImageResource(android.R.drawable.ic_media_pause);
         Uri.Builder uBuilder = new Uri.Builder();
         uBuilder.scheme("http")
                 .authority("playerservices.streamtheworld.com")
@@ -41,7 +40,6 @@ public class Streamer {
         if (prepared) {
             mediaPlayer.start();
             playing = true;
-            playPause.setImageResource(android.R.drawable.ic_media_pause);
         } else if (!preparing) {
             progressBar.setVisibility(View.VISIBLE);
             progressBar.setIndeterminate(true);
@@ -58,7 +56,6 @@ public class Streamer {
                         playing = true;
                         progressBar.setIndeterminate(false);
                         progressBar.setVisibility(View.GONE);
-                        playPause.setImageResource(android.R.drawable.ic_media_pause);
                     }
                 });
                 mediaPlayer.prepareAsync();
@@ -77,7 +74,6 @@ public class Streamer {
         if (!prepared || !playing) return;
         mediaPlayer.pause();
         playing = false;
-        playPause.setImageResource(android.R.drawable.ic_media_play);
 
     }
 
@@ -88,7 +84,6 @@ public class Streamer {
         playing = false;
         progressBar.setIndeterminate(true);
         progressBar.setVisibility(View.VISIBLE);
-        playPause.setImageResource(android.R.drawable.ic_media_play);
     }
 
     public void stop() {
@@ -99,7 +94,6 @@ public class Streamer {
         playing = false;
         progressBar.setVisibility(View.GONE);
         progressBar.setIndeterminate(false);
-        playPause.setImageResource(android.R.drawable.ic_media_play);
     }
 
     public boolean isPlaying() {
