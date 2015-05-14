@@ -144,16 +144,16 @@ class DefaultHand extends DefaultHandler {
             songInfo.trackId = -666;
             return;
         } else if (song) {
-            songInfo.songName = new String(ch).substring(0, length);
+            songInfo.songName = new String(ch).substring(start, length);
             return;
         } else if (artist) {
-            songInfo.artistName = new String(ch).substring(0, length);
+            songInfo.artistName = new String(ch).substring(start, length);
             return;
         } else if (url) {
-            songInfo.jsonUrl = new String(ch).substring(0, length);
+            songInfo.jsonUrl = new String(ch).substring(start, length);
             return;
         } else if (id) {
-            songInfo.trackId = Integer.valueOf(new String(ch).substring(0, length));
+            songInfo.trackId = Integer.valueOf(new String(ch).substring(start, length));
             return;
         }
     }
@@ -182,12 +182,13 @@ class JParser extends AsyncTask<SongInfo, Void, SongInfo> {
             params[0].imageUrl = jsonObject.getJSONObject("song").getJSONObject("album").getJSONObject("cover").getString("originalSourceUrl");
             params[0].songSample = jsonObject.getJSONObject("song").getJSONObject("track").getString("sampleUrl");
             params[0].buySong = jsonObject.getJSONObject("song").getJSONObject("track").getString("buyURL");
+            System.out.println("Now Playing>> " + params[0]);
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         } catch (JSONException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         } catch (IllegalStateException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return params[0];
     }

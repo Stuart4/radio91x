@@ -1,7 +1,6 @@
 package org.stuartresearch.radio91x;
 
-import android.app.Activity;
-import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.internal.app.ToolbarActionBar;
@@ -10,14 +9,19 @@ import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.Animation;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toolbar;
 
+import com.github.ksoichiro.android.observablescrollview.ObservableRecyclerView;
+import com.github.ksoichiro.android.observablescrollview.ObservableScrollViewCallbacks;
+import com.github.ksoichiro.android.observablescrollview.ScrollState;
 import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Transformation;
-
 import java.util.Stack;
 
 public class MainActivity extends ActionBarActivity {
@@ -27,6 +31,7 @@ public class MainActivity extends ActionBarActivity {
     Parser parser;
     Stack<SongInfo> songStack = new Stack<>();
     CardAdapter cardAdapter;
+    boolean toolbarShowing = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +63,31 @@ public class MainActivity extends ActionBarActivity {
         recyclerView.setLayoutManager(lm);
         cardAdapter = new CardAdapter(songStack);
         recyclerView.setAdapter(cardAdapter);
+        if (Build.VERSION.SDK_INT >20)
+            getWindow().setNavigationBarColor(getResources().getColor(R.color.primary_dark));
+        final android.support.v7.widget.Toolbar toolBar = (android.support.v7.widget.Toolbar) findViewById(R.id.lowerToolbar);
+        ObservableRecyclerView orv = (ObservableRecyclerView) recyclerView;
+        orv.setScrollViewCallbacks(new ObservableScrollViewCallbacks() {
+            @Override
+            public void onScrollChanged(int i, boolean b, boolean b1) {
+            }
+
+            @Override
+            public void onDownMotionEvent() {
+            }
+
+            @Override
+            public void onUpOrCancelMotionEvent(ScrollState scrollState) {
+                if (scrollState == ScrollState.UP && toolbarShowing) {
+                    toolBar.animate().translationY(toolBar.getHeight()).setInterpolator(new AccelerateInterpolator()).start();
+                    toolbarShowing = false;
+
+                } else if (scrollState == ScrollState.DOWN && !toolbarShowing) {
+                    toolBar.animate().translationY(0).setInterpolator(new DecelerateInterpolator()).start();
+                    toolbarShowing = true;
+                }
+            }
+        });
     }
 
     @Override
@@ -98,8 +128,11 @@ public class MainActivity extends ActionBarActivity {
         parser = new Parser(this);
         parser.currentSong = songInfo;
         parser.execute();
-        songStack.push(songInfo);
-        cardAdapter.notifyDataSetChanged();
+        if (songInfo.trackId != -666) {
+            songStack.push(songInfo);
+            //cardAdapter.notifyDataSetChanged();
+            cardAdapter.notifyItemInserted(0);
+        }
     }
 
     public void startParser() {

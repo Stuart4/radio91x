@@ -9,7 +9,7 @@
         android:layout_height="match_parent"
         android:id="@+id/linearLayout">
 
-        <android.support.v7.widget.RecyclerView
+        <com.github.ksoichiro.android.observablescrollview.ObservableRecyclerView
             android:id="@+id/cardList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

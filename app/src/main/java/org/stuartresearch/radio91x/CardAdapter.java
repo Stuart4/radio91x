@@ -68,7 +68,6 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         @Override public Bitmap transform(Bitmap source) {
             int x = 0;
             int y = (source.getHeight() / 2) - albumImage.getHeight();
-            System.out.println("album: " + albumImage.getHeight() + ", bitmap: " + source.getHeight());
             Bitmap result = Bitmap.createBitmap(source, x, y >= 0 ? y : 0, Math.min(albumImage.getWidth(), source.getWidth()), albumImage.getHeight());
             if (result != source) {
                 source.recycle();
