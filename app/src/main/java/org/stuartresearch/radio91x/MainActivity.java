@@ -1,6 +1,7 @@
 package org.stuartresearch.radio91x;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.internal.app.ToolbarActionBar;
@@ -15,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toolbar;
 
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Transformation;
 
 import java.util.Stack;
 
@@ -111,4 +113,6 @@ public class MainActivity extends ActionBarActivity {
     public void stopParser() {
         parser.running = false;
     }
+
+
 }

@@ -1,6 +1,7 @@
 package org.stuartresearch.radio91x;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Transformation;
 
 import java.util.Stack;
 
@@ -33,7 +35,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         songInfoHolder.songText.setText(songInfo.songName);
         songInfoHolder.artistText.setText(songInfo.artistName);
         if (songInfo.imageUrl.length() > 0)
-            Picasso.with(songInfoHolder.context).load(songInfo.imageUrl).into(songInfoHolder.albumImage);
+            Picasso.with(songInfoHolder.context).load(songInfo.imageUrl).transform(new AlbumTransformation(songInfoHolder.albumImage)).into(songInfoHolder.albumImage);
 
     }
 
@@ -55,6 +57,26 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
             albumImage = (ImageView) v.findViewById(R.id.albumImageView);
             context = v.getContext();
         }
+    }
+    public static class AlbumTransformation implements Transformation {
+        ImageView albumImage;
+
+        public AlbumTransformation(ImageView iv) {
+            albumImage = iv;
+        }
+
+        @Override public Bitmap transform(Bitmap source) {
+            int x = 0;
+            int y = (source.getHeight() / 2) - albumImage.getHeight();
+            System.out.println("album: " + albumImage.getHeight() + ", bitmap: " + source.getHeight());
+            Bitmap result = Bitmap.createBitmap(source, x, y, source.getWidth(), albumImage.getHeight());
+            if (result != source) {
+                source.recycle();
+            }
+            return result;
+        }
+
+        @Override public String key() { return "square()"; }
     }
 }
 
