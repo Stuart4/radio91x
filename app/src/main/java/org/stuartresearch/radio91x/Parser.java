@@ -1,6 +1,9 @@
 package org.stuartresearch.radio91x;
 
 import android.os.AsyncTask;
+import android.support.v7.widget.RecyclerView;
+import android.view.View;
+import android.widget.TextView;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -63,10 +66,15 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
 
     @Override
     protected void onPostExecute(SongInfo songInfo) {
-        if (songInfo.trackId == -666) {
-            songInfo.songName = "Advertisement";
-            main.updateSongInfo(songInfo);
+        if (songInfo == null) {
+            new JParser(main).execute(songInfo);
+            return;
         }
+
+            if (songInfo.trackId == -666) {
+                songInfo.songName = "Advertisement";
+                main.updateSongInfo(songInfo);
+            }
         new JParser(main).execute(songInfo);
     }
 }
@@ -88,6 +96,7 @@ class SongInfo {
         return song.trackId == trackId;
     }
 }
+
 
 class DefaultHand extends DefaultHandler {
     boolean song = false;
@@ -158,6 +167,7 @@ class JParser extends AsyncTask<SongInfo, Void, SongInfo> {
     }
     @Override
     protected SongInfo doInBackground(SongInfo... params) {
+        if (params[0] == null) return null;
         DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
         HttpGet httpGet = new HttpGet(params[0].jsonUrl);
         try {
