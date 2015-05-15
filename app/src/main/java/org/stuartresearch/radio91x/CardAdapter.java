@@ -31,7 +31,17 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
     @Override
     public void onBindViewHolder(SongInfoHolder songInfoHolder, int i) {
-        SongInfo songInfo = songInfoStack.get(getItemCount() - 1 - i);
+        int pos = getItemCount() - 1 - i;
+        SongInfo songInfo = songInfoStack.get(pos);
+        if (i == 0) {
+            songInfoHolder.background.setVisibility(View.VISIBLE);
+            songInfoHolder.equalizer.setVisibility(View.VISIBLE);
+            songInfoHolder.albumImage.setAlpha(0.25f);
+        } else {
+            songInfoHolder.background.setVisibility(View.GONE);
+            songInfoHolder.equalizer.setVisibility(View.GONE);
+            songInfoHolder.albumImage.setAlpha(1f);
+        }
         songInfoHolder.songText.setText(songInfo.songName);
         songInfoHolder.artistText.setText(songInfo.artistName);
         if (songInfo.imageUrl.length() > 0)
@@ -49,6 +59,8 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         protected TextView songText;
         protected TextView artistText;
         protected ImageView albumImage;
+        protected View background;
+        protected ImageView equalizer;
         Context context;
         public SongInfoHolder(View v) {
             super(v);
@@ -56,6 +68,8 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
             artistText = (TextView) v.findViewById(R.id.artistNameTextView);
             albumImage = (ImageView) v.findViewById(R.id.albumImageView);
             context = v.getContext();
+            background = (View) v.findViewById(R.id.playingBackground);
+            equalizer = (ImageView) v.findViewById(R.id.playingEqualizer);
         }
     }
     public static class AlbumTransformation implements Transformation {

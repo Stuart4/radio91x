@@ -1,9 +1,7 @@
 package org.stuartresearch.radio91x;
 
 import android.os.AsyncTask;
-import android.support.v7.widget.RecyclerView;
-import android.view.View;
-import android.widget.TextView;
+import android.util.Log;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -17,6 +15,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URL;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -27,9 +26,10 @@ import javax.xml.parsers.SAXParserFactory;
  */
 public class Parser extends AsyncTask<Void, Void, SongInfo> {
     boolean running = true;
-    SongInfo currentSong;
     private SAXParserFactory spf;
     MainActivity main;
+    String songTitle = new String();
+    String artistName = new String();
 
     public Parser(MainActivity mainActivity) {
         spf = SAXParserFactory.newInstance();
@@ -40,17 +40,49 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
     protected SongInfo doInBackground(Void... params) {
         while (running) {
             try {
-                SAXParser sp = spf.newSAXParser();
-                DefaultHand hand = new DefaultHand();
-                sp.parse("http://np.tritondigital.com/public/nowplaying?mountName=XTRAFM&numberToFetch=1&random=" + System.currentTimeMillis(), hand);
-                if (currentSong == null || !currentSong.equals(hand.songInfo)) {
-                    currentSong = hand.songInfo;
-                    return currentSong;
-                } else {
-                    try {
-                        Thread.sleep(10000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+
+                URL url = new URL("http://playerservices.streamtheworld.com/api/livestream-redirect/XTRAFM.mp3");
+                ParsingHeaderData streaming = new ParsingHeaderData();
+                ParsingHeaderData.TrackData trackData = streaming.getTrackDetails(url);
+                Log.d("91X", String.format("Read -> Artist: %s, Title: %s", trackData.artist, trackData.title));
+                if (!songTitle.equals(trackData.title)) {
+                    if (!artistName.equals(trackData.artist)) {
+                        SAXParser sp = spf.newSAXParser();
+                        DefaultHand hand = new DefaultHand();
+                        sp.parse("http://np.tritondigital.com/public/nowplaying?mountName=XTRAFM&numberToFetch=1&random=" + System.currentTimeMillis(), hand);
+                        if (hand.songInfo.artistName.equals(trackData.artist) && hand.songInfo.songName.equals(trackData.title)) {
+                            songTitle = trackData.title;
+                            artistName = trackData.artist;
+                            if (hand.songInfo.trackId == -666) {
+                                hand.songInfo.songName = "Advertisement";
+                                return hand.songInfo;
+                            }
+                            DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
+                            HttpGet httpGet = new HttpGet(hand.songInfo.jsonUrl);
+                            try {
+                                HttpResponse httpResponse = defaultHttpClient.execute(httpGet);
+                                BufferedReader reader = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent(), "UTF-8"));
+                                String line;
+                                String json = new String();
+                                while ((line = reader.readLine()) != null) {
+                                    json += line;
+                                }
+                                JSONObject jsonObject = new JSONObject(json);
+                                hand.songInfo.imageUrl = jsonObject.getJSONObject("song").getJSONObject("album").getJSONObject("cover").getString("originalSourceUrl");
+                                hand.songInfo.songSample = jsonObject.getJSONObject("song").getJSONObject("track").getString("sampleURL");
+                                hand.songInfo.buySong = jsonObject.getJSONObject("song").getJSONObject("track").getString("buyURL");
+                                return hand.songInfo;
+                            } catch (Exception e) {
+                                return hand.songInfo;
+                            }
+                        }
+                        //stream data and xml do not match
+                        else {
+                            hand.songInfo.trackId = -666;
+                            hand.songInfo.songName = "Out of Sync";
+                            hand.songInfo.artistName = "";
+                            return hand.songInfo;
+                        }
                     }
                 }
             } catch (ParserConfigurationException e) {
@@ -60,6 +92,9 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            try {
+                Thread.sleep(8000);
+            } catch (InterruptedException e) {}
         }
         return null;
     }
@@ -67,15 +102,11 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
     @Override
     protected void onPostExecute(SongInfo songInfo) {
         if (songInfo == null) {
-            new JParser(main).execute(songInfo);
+            new Parser(main).execute();
             return;
         }
+        main.updateSongInfo(songInfo);
 
-            if (songInfo.trackId == -666) {
-                songInfo.songName = "Advertisement";
-                main.updateSongInfo(songInfo);
-            }
-        new JParser(main).execute(songInfo);
     }
 }
 
@@ -159,42 +190,4 @@ class DefaultHand extends DefaultHandler {
     }
 }
 
-class JParser extends AsyncTask<SongInfo, Void, SongInfo> {
-    MainActivity main;
 
-    public JParser(MainActivity con) {
-        main = con;
-    }
-    @Override
-    protected SongInfo doInBackground(SongInfo... params) {
-        if (params[0] == null) return null;
-        DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
-        HttpGet httpGet = new HttpGet(params[0].jsonUrl);
-        try {
-            HttpResponse httpResponse = defaultHttpClient.execute(httpGet);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent(), "UTF-8"));
-            String line;
-            String json = new String();
-            while ((line = reader.readLine()) != null) {
-                json += line;
-            }
-            JSONObject jsonObject = new JSONObject(json);
-            params[0].imageUrl = jsonObject.getJSONObject("song").getJSONObject("album").getJSONObject("cover").getString("originalSourceUrl");
-            params[0].songSample = jsonObject.getJSONObject("song").getJSONObject("track").getString("sampleUrl");
-            params[0].buySong = jsonObject.getJSONObject("song").getJSONObject("track").getString("buyURL");
-            System.out.println("Now Playing>> " + params[0]);
-        } catch (IOException e) {
-            //e.printStackTrace();
-        } catch (JSONException e) {
-            //e.printStackTrace();
-        } catch (IllegalStateException e) {
-            //e.printStackTrace();
-        }
-        return params[0];
-    }
-
-    @Override
-    protected void onPostExecute(SongInfo songInfo) {
-        main.updateSongInfo(songInfo);
-    }
-}

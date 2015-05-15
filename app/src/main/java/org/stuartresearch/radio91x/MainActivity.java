@@ -1,5 +1,7 @@
 package org.stuartresearch.radio91x;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
@@ -88,12 +90,49 @@ public class MainActivity extends ActionBarActivity {
                 }
             }
         });
+
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        MenuItem dialIt = (MenuItem) menu.findItem(R.id.call91x);
+        MenuItem txtIt = (MenuItem) menu.findItem(R.id.text91x);
+        MenuItem showFavs = (MenuItem) menu.findItem(R.id.showFavorites);
+        dialIt.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_DIAL);
+                    intent.setData(Uri.parse("tel:5701919"));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    return false;
+                }
+                return true;
+            }
+        });
+        txtIt.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_DIAL);
+                    intent.setData(Uri.parse("tel:5701919"));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    return false;
+                }
+                return true;
+            }
+        });
+        showFavs.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                //TODO
+                return false;
+            }
+        });
         return true;
     }
 
@@ -113,25 +152,23 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void updateSongInfo(SongInfo songInfo) {
-        if (songInfo == null) {
-            parser = new Parser(this);
-            parser.currentSong = null;
-            parser.execute();
-            return;
-        }
         songText.setText(songInfo.songName);
         artistText.setText(songInfo.artistName);
         if (songInfo.imageUrl.length() > 0) {
             Picasso.with(this).load(songInfo.imageUrl).into(albumView);
             albumView.setVisibility(View.VISIBLE);
+        } else {
+            albumView.setVisibility(View.GONE);
         }
         parser = new Parser(this);
-        parser.currentSong = songInfo;
+        parser.songTitle = songInfo.songName;
+        parser.artistName = songInfo.artistName;
         parser.execute();
         if (songInfo.trackId != -666) {
             songStack.push(songInfo);
             //cardAdapter.notifyDataSetChanged();
             cardAdapter.notifyItemInserted(0);
+            cardAdapter.notifyItemChanged(1);
         }
     }
 
