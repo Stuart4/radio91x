@@ -19,9 +19,11 @@ import java.util.Stack;
  */
 public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder> {
     private Stack<SongInfo> songInfoStack;
+    Context context;
 
-    public CardAdapter(Stack<SongInfo> stack) {
+    public CardAdapter(Stack<SongInfo> stack, Context context) {
         songInfoStack = stack;
+        this.context = context;
     }
 
     @Override
@@ -36,7 +38,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         if (i == 0) {
             songInfoHolder.background.setVisibility(View.VISIBLE);
             songInfoHolder.equalizer.setVisibility(View.VISIBLE);
-            songInfoHolder.albumImage.setAlpha(0.25f);
+            songInfoHolder.albumImage.setAlpha(.25f);
         } else {
             songInfoHolder.background.setVisibility(View.GONE);
             songInfoHolder.equalizer.setVisibility(View.GONE);
@@ -45,13 +47,23 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         songInfoHolder.songText.setText(songInfo.songName);
         songInfoHolder.artistText.setText(songInfo.artistName);
         if (songInfo.imageUrl.length() > 0)
-            Picasso.with(songInfoHolder.context).load(songInfo.imageUrl).transform(new AlbumTransformation(songInfoHolder.albumImage)).into(songInfoHolder.albumImage);
+            Picasso.with(songInfoHolder.context).load(songInfo.imageUrl)
+                    .placeholder(context.getResources().getDrawable(R.drawable.notes_background))
+                    .transform(new AlbumTransformation(songInfoHolder.albumImage))
+                    .into(songInfoHolder.albumImage);
+        else {
+            Picasso.with(songInfoHolder.context).
+                    load(R.drawable.notes_background).
+                    transform(new AlbumTransformation(songInfoHolder.albumImage)).
+                    into(songInfoHolder.albumImage);
+        }
 
     }
 
     @Override
     public SongInfoHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-        View itemView = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.card_layout, viewGroup, false);
+        View itemView = LayoutInflater.from(viewGroup.getContext())
+                .inflate(R.layout.card_layout, viewGroup, false);
         return new SongInfoHolder(itemView);
     }
 
@@ -82,7 +94,8 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         @Override public Bitmap transform(Bitmap source) {
             int x = 0;
             int y = (source.getHeight() / 2) - albumImage.getHeight();
-            Bitmap result = Bitmap.createBitmap(source, x, y >= 0 ? y : 0, Math.min(albumImage.getWidth(), source.getWidth()), albumImage.getHeight());
+            Bitmap result = Bitmap.createBitmap(source, x, y >= 0 ? y : 0,
+                    Math.min(albumImage.getWidth(), source.getWidth()), albumImage.getHeight());
             if (result != source) {
                 source.recycle();
             }

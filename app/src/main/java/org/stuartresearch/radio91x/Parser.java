@@ -41,16 +41,20 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
         while (running) {
             try {
 
-                URL url = new URL("http://playerservices.streamtheworld.com/api/livestream-redirect/XTRAFM.mp3");
+                URL url = new URL("http://playerservices.streamtheworld.com" +
+                        "/api/livestream-redirect/XTRAFM.mp3");
                 ParsingHeaderData streaming = new ParsingHeaderData();
                 ParsingHeaderData.TrackData trackData = streaming.getTrackDetails(url);
-                Log.d("91X", String.format("Read -> Artist: %s, Title: %s", trackData.artist, trackData.title));
+                Log.d("91X", String.format("Read -> Artist: %s, Title: %s", trackData.artist,
+                        trackData.title));
                 if (!songTitle.equals(trackData.title)) {
                     if (!artistName.equals(trackData.artist)) {
                         SAXParser sp = spf.newSAXParser();
                         DefaultHand hand = new DefaultHand();
-                        sp.parse("http://np.tritondigital.com/public/nowplaying?mountName=XTRAFM&numberToFetch=1&random=" + System.currentTimeMillis(), hand);
-                        if (hand.songInfo.artistName.equals(trackData.artist) && hand.songInfo.songName.equals(trackData.title)) {
+                        sp.parse("http://np.tritondigital.com/public/nowplaying?mountName=XTRAFM" +
+                                "&numberToFetch=1&random=" + System.currentTimeMillis(), hand);
+                        if (hand.songInfo.artistName.equals(trackData.artist) &&
+                                hand.songInfo.songName.equals(trackData.title)) {
                             songTitle = trackData.title;
                             artistName = trackData.artist;
                             if (hand.songInfo.trackId == -666) {
@@ -61,16 +65,45 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
                             HttpGet httpGet = new HttpGet(hand.songInfo.jsonUrl);
                             try {
                                 HttpResponse httpResponse = defaultHttpClient.execute(httpGet);
-                                BufferedReader reader = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent(), "UTF-8"));
+                                BufferedReader reader =
+                                        new BufferedReader(new InputStreamReader(httpResponse.
+                                                getEntity().getContent(), "UTF-8"));
                                 String line;
                                 String json = new String();
                                 while ((line = reader.readLine()) != null) {
                                     json += line;
                                 }
                                 JSONObject jsonObject = new JSONObject(json);
-                                hand.songInfo.imageUrl = jsonObject.getJSONObject("song").getJSONObject("album").getJSONObject("cover").getString("originalSourceUrl");
-                                hand.songInfo.songSample = jsonObject.getJSONObject("song").getJSONObject("track").getString("sampleURL");
-                                hand.songInfo.buySong = jsonObject.getJSONObject("song").getJSONObject("track").getString("buyURL");
+                                //inconsistent Url URL - try both
+                                try {
+                                    hand.songInfo.imageUrl = jsonObject.getJSONObject("song")
+                                            .getJSONObject("album").getJSONObject("cover")
+                                            .getString("originalSourceUrl");
+                                } catch (Exception e) {
+                                    try {
+                                        hand.songInfo.imageUrl = jsonObject.getJSONObject("song")
+                                                .getJSONObject("album").getJSONObject("cover")
+                                                .getString("originalSourceURL");
+                                    } catch (Exception x) {}
+                                }
+                                try {
+                                    hand.songInfo.songSample = jsonObject.getJSONObject("song")
+                                            .getJSONObject("track").getString("sampleURL");
+                                } catch (Exception e) {
+                                    try {
+                                        hand.songInfo.songSample = jsonObject.getJSONObject("song")
+                                                .getJSONObject("track").getString("sampleUrl");
+                                    } catch (Exception x) {}
+                                }
+                                try {
+                                    hand.songInfo.buySong = jsonObject.getJSONObject("song")
+                                            .getJSONObject("track").getString("buyURL");
+                                } catch (Exception e) {
+                                    try {
+                                        hand.songInfo.buySong = jsonObject.getJSONObject("song")
+                                                .getJSONObject("track").getString("buyUrl");
+                                    } catch (Exception x) {}
+                                }
                                 return hand.songInfo;
                             } catch (Exception e) {
                                 return hand.songInfo;
@@ -78,9 +111,7 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
                         }
                         //stream data and xml do not match
                         else {
-                            hand.songInfo.trackId = -666;
-                            hand.songInfo.songName = "Out of Sync";
-                            hand.songInfo.artistName = "";
+                            hand.songInfo.trackId = -665;
                             return hand.songInfo;
                         }
                     }
@@ -138,7 +169,8 @@ class DefaultHand extends DefaultHandler {
     SongInfo songInfo = new SongInfo();
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes)
+            throws SAXException {
         if (qName.compareTo("property") == 0 && !ad) {
             switch (attributes.getValue(0)) {
                 case "ad_id":

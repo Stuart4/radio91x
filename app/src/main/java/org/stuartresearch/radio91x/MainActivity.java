@@ -1,5 +1,6 @@
 package org.stuartresearch.radio91x;
 
+import android.animation.Animator;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
@@ -8,6 +9,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.support.v7.internal.app.ToolbarActionBar;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -34,13 +36,16 @@ public class MainActivity extends ActionBarActivity {
     Stack<SongInfo> songStack = new Stack<>();
     CardAdapter cardAdapter;
     boolean toolbarShowing = true;
+    RecyclerView recyclerView;
+    boolean showingFavs = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         final ImageView playPause = (ImageView) findViewById(R.id.controlImageView);
-        final Streamer streamer = new Streamer(getApplicationContext(), (ProgressBar) findViewById(R.id.progressBar), playPause);
+        final Streamer streamer = new Streamer(getApplicationContext(),
+                (ProgressBar) findViewById(R.id.progressBar), playPause);
         albumView = (ImageView) findViewById(R.id.albumImageView);
         songText = (TextView) findViewById(R.id.songNameTextView);
         artistText = (TextView) findViewById(R.id.ArtistNameTextView);
@@ -59,15 +64,16 @@ public class MainActivity extends ActionBarActivity {
             }
         });
         startParser();
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.cardList);
+        recyclerView = (RecyclerView) findViewById(R.id.cardList);
         recyclerView.setHasFixedSize(false);
         LinearLayoutManager lm = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(lm);
-        cardAdapter = new CardAdapter(songStack);
+        cardAdapter = new CardAdapter(songStack, this);
         recyclerView.setAdapter(cardAdapter);
         if (Build.VERSION.SDK_INT >20)
             getWindow().setNavigationBarColor(getResources().getColor(R.color.primary_dark));
-        final android.support.v7.widget.Toolbar toolBar = (android.support.v7.widget.Toolbar) findViewById(R.id.lowerToolbar);
+        final android.support.v7.widget.Toolbar toolBar =
+                (android.support.v7.widget.Toolbar) findViewById(R.id.lowerToolbar);
         ObservableRecyclerView orv = (ObservableRecyclerView) recyclerView;
         orv.setScrollViewCallbacks(new ObservableScrollViewCallbacks() {
             @Override
@@ -99,7 +105,7 @@ public class MainActivity extends ActionBarActivity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         MenuItem dialIt = (MenuItem) menu.findItem(R.id.call91x);
         MenuItem txtIt = (MenuItem) menu.findItem(R.id.text91x);
-        MenuItem showFavs = (MenuItem) menu.findItem(R.id.showFavorites);
+        final MenuItem showFavs = (MenuItem) menu.findItem(R.id.showFavorites);
         dialIt.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
@@ -117,9 +123,8 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 try {
-                    Intent intent = new Intent(Intent.ACTION_DIAL);
-                    intent.setData(Uri.parse("tel:5701919"));
-                    startActivity(intent);
+                    startActivity(new Intent(Intent.ACTION_VIEW,
+                            Uri.fromParts("sms", String.valueOf(33911), null)));
                 } catch (Exception e) {
                     return false;
                 }
@@ -130,8 +135,17 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 //TODO
-                return false;
+                if (showingFavs) {
+                    showFavs.setIcon(getResources().getDrawable(R.drawable.ic_favorite_black_18dp));
+                    showingFavs = false;
+                    return true;
+                } else {
+                    showFavs.setIcon(getResources().getDrawable(R.drawable.ic_favorite_red_18dp));
+                    showingFavs = true;
+                    return true;
+                }
             }
+
         });
         return true;
     }
@@ -152,10 +166,24 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void updateSongInfo(SongInfo songInfo) {
+        if (songInfo.trackId == -655) {
+            songText.setText("Out of Sync");
+            artistText.setText("");
+            return;
+        }
+        if (songStack.size() >= 2 && songInfo.trackId == songStack.peek().trackId) {
+            parser = new Parser(this);
+            parser.songTitle = songInfo.songName;
+            parser.artistName = songInfo.artistName;
+            parser.execute();
+            return;
+        }
         songText.setText(songInfo.songName);
         artistText.setText(songInfo.artistName);
         if (songInfo.imageUrl.length() > 0) {
-            Picasso.with(this).load(songInfo.imageUrl).into(albumView);
+            Picasso.with(this).load(songInfo.imageUrl)
+                    .placeholder(getResources().getDrawable(R.drawable.notes_background))
+                    .into(albumView);
             albumView.setVisibility(View.VISIBLE);
         } else {
             albumView.setVisibility(View.GONE);
@@ -163,24 +191,34 @@ public class MainActivity extends ActionBarActivity {
         parser = new Parser(this);
         parser.songTitle = songInfo.songName;
         parser.artistName = songInfo.artistName;
-        parser.execute();
         if (songInfo.trackId != -666) {
             songStack.push(songInfo);
-            //cardAdapter.notifyDataSetChanged();
             cardAdapter.notifyItemInserted(0);
             cardAdapter.notifyItemChanged(1);
+            if (recyclerView.getScrollY() == 0)
+                recyclerView.smoothScrollToPosition(0);
         }
+        parser.execute();
     }
 
     public void startParser() {
         parser = new Parser(this);
-        parser.execute();
         parser.running = true;
+        parser.execute();
 
     }
 
     public void stopParser() {
+        parser.cancel(true);
         parser.running = false;
+    }
+
+    public void onResume() {
+        super.onResume();
+    }
+
+    public void onPause() {
+        super.onPause();
     }
 
 
