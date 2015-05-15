@@ -57,6 +57,11 @@ public class MainActivity extends ActionBarActivity {
             public void onAudioFocusChange(int focusChange) {
                 if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
                     if (streamer.isPlaying()) playPause.callOnClick();
+                } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK ||
+                        focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+                    streamer.noSound();
+                } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+                    streamer.sound();
                 }
             }
         };
@@ -84,6 +89,7 @@ public class MainActivity extends ActionBarActivity {
                 }
             }
         });
+        new AudioPlayerBroadcastReceiver(playPause);
         if (res != AudioManager.AUDIOFOCUS_REQUEST_FAILED)
             startParser();
         recyclerView = (RecyclerView) findViewById(R.id.cardList);

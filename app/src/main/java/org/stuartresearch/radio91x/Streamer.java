@@ -68,16 +68,14 @@ public class Streamer {
                 e.printStackTrace();
             }
         }
-
-
-
     }
 
-    public void pause() {
-        if (!prepared || !playing) return;
-        mediaPlayer.pause();
-        playing = false;
-        playPause.setImageResource(R.drawable.ic_pause_black_18dp);
+    public void noSound() {
+        mediaPlayer.setVolume(0, 0);
+    }
+
+    public void sound() {
+        mediaPlayer.setVolume(1, 1);
     }
 
     public void kill() {
