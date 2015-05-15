@@ -1,8 +1,10 @@
 package org.stuartresearch.radio91x;
 
 import android.content.Context;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.support.v4.app.NotificationCompat;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -66,7 +68,8 @@ public class Streamer {
                 e.printStackTrace();
             }
         }
-        //System.out.println(mediaPlayer.getTrackInfo()[0]);
+
+
 
     }
 
@@ -74,16 +77,13 @@ public class Streamer {
         if (!prepared || !playing) return;
         mediaPlayer.pause();
         playing = false;
-
+        playPause.setImageResource(R.drawable.ic_pause_black_18dp);
     }
 
-    public void reset() {
-        mediaPlayer.reset();
-        mediaPlayer.prepareAsync();
+    public void kill() {
+        mediaPlayer.release();
         prepared = false;
         playing = false;
-        progressBar.setIndeterminate(true);
-        progressBar.setVisibility(View.VISIBLE);
     }
 
     public void stop() {

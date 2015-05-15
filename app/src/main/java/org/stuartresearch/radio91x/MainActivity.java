@@ -1,12 +1,18 @@
 package org.stuartresearch.radio91x;
 
-import android.animation.Animator;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.TaskStackBuilder;
+import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.net.Uri;
+import android.opengl.Visibility;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.ActionBarActivity;
-import android.support.v7.internal.app.ToolbarActionBar;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -14,18 +20,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
-import android.view.animation.Animation;
 import android.view.animation.DecelerateInterpolator;
-import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toolbar;
 
 import com.github.ksoichiro.android.observablescrollview.ObservableRecyclerView;
 import com.github.ksoichiro.android.observablescrollview.ObservableScrollViewCallbacks;
 import com.github.ksoichiro.android.observablescrollview.ScrollState;
 import com.squareup.picasso.Picasso;
+
 import java.util.Stack;
 
 public class MainActivity extends ActionBarActivity {
@@ -38,14 +42,28 @@ public class MainActivity extends ActionBarActivity {
     boolean toolbarShowing = true;
     RecyclerView recyclerView;
     boolean showingFavs = false;
+    Streamer streamer;
+    AudioManager.OnAudioFocusChangeListener afChangeListener;
+    AudioManager audioManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         final ImageView playPause = (ImageView) findViewById(R.id.controlImageView);
-        final Streamer streamer = new Streamer(getApplicationContext(),
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int focusChange) {
+                if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+                    if (streamer.isPlaying()) playPause.callOnClick();
+                }
+            }
+        };
+        int res = audioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        streamer = new Streamer(getApplicationContext(),
                 (ProgressBar) findViewById(R.id.progressBar), playPause);
+        if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) streamer.stop();
         albumView = (ImageView) findViewById(R.id.albumImageView);
         songText = (TextView) findViewById(R.id.songNameTextView);
         artistText = (TextView) findViewById(R.id.ArtistNameTextView);
@@ -57,13 +75,17 @@ public class MainActivity extends ActionBarActivity {
                     stopParser();
                     playPause.setImageResource(R.drawable.ic_play_arrow_black_18dp);
                 } else {
+                    int res = audioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+                    if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) return;
                     streamer.play();
+                    showNotification();
                     startParser();
                     playPause.setImageResource(R.drawable.ic_pause_black_18dp);
                 }
             }
         });
-        startParser();
+        if (res != AudioManager.AUDIOFOCUS_REQUEST_FAILED)
+            startParser();
         recyclerView = (RecyclerView) findViewById(R.id.cardList);
         recyclerView.setHasFixedSize(false);
         LinearLayoutManager lm = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
@@ -213,12 +235,60 @@ public class MainActivity extends ActionBarActivity {
         parser.running = false;
     }
 
-    public void onResume() {
+    public void showNotification() {
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.ic_headset_black_18dp)
+                .setOngoing(true)
+                .setVisibility(Notification.VISIBILITY_PUBLIC)
+                .setStyle(new NotificationCompat.BigPictureStyle())
+                .setContentTitle("91x")
+                .setContentText(String.format("You are listening to %s by %s on San Diego's 91x.",
+                        songText.getText(), artistText.getText()));
+        Intent resultIntent = new Intent(this, MainActivity.class);
+        resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addParentStack(MainActivity.class);
+        stackBuilder.addNextIntent(resultIntent);
+        PendingIntent resultPendingIntent = stackBuilder
+                .getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+        mBuilder.setContentIntent(resultPendingIntent);
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        Notification notification = mBuilder.build();
+        notificationManager.notify(919191, notification);
+
+    }
+
+    public void hideNotification() {
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        showNotification();
+    }
+
+    @Override
+    protected void onResume() {
         super.onResume();
     }
 
-    public void onPause() {
+    @Override
+    protected void onPause() {
         super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        streamer.kill();
+        stopParser();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+
     }
 
 

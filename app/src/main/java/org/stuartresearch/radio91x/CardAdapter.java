@@ -104,6 +104,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
         @Override public String key() { return "square()"; }
     }
+
 }
 
 
