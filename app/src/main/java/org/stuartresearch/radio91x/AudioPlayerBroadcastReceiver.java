@@ -11,6 +11,8 @@ import android.widget.ImageView;
 public class AudioPlayerBroadcastReceiver extends BroadcastReceiver {
     static ImageView playPause;
 
+    public AudioPlayerBroadcastReceiver() {}
+
     public AudioPlayerBroadcastReceiver(ImageView image) {
         playPause = image;
     }

@@ -1,20 +1,28 @@
 package org.stuartresearch.radio91x;
 
+import android.app.MediaRouteButton;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
+import android.media.MediaMetadataEditor;
+import android.media.MediaMetadataRetriever;
+import android.media.RemoteControlClient;
 import android.net.Uri;
 import android.opengl.Visibility;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -45,12 +53,14 @@ public class MainActivity extends ActionBarActivity {
     Streamer streamer;
     AudioManager.OnAudioFocusChangeListener afChangeListener;
     AudioManager audioManager;
+    ImageView playPause;
+    MediaSessionCompat msc;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        final ImageView playPause = (ImageView) findViewById(R.id.controlImageView);
+        playPause = (ImageView) findViewById(R.id.controlImageView);
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
             @Override
@@ -79,6 +89,7 @@ public class MainActivity extends ActionBarActivity {
                     streamer.stop();
                     stopParser();
                     playPause.setImageResource(R.drawable.ic_play_arrow_black_18dp);
+                    hideNotification();
                 } else {
                     int res = audioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
                     if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) return;
@@ -86,6 +97,7 @@ public class MainActivity extends ActionBarActivity {
                     showNotification();
                     startParser();
                     playPause.setImageResource(R.drawable.ic_pause_black_18dp);
+                    showNotification();
                 }
             }
         });
@@ -124,7 +136,8 @@ public class MainActivity extends ActionBarActivity {
                 }
             }
         });
-
+        msc = new MediaSessionCompat(this, "radio91x");
+        lockScreenControls();
     }
 
     @Override
@@ -227,6 +240,7 @@ public class MainActivity extends ActionBarActivity {
                 recyclerView.smoothScrollToPosition(0);
         }
         parser.execute();
+        showNotification();
     }
 
     public void startParser() {
@@ -242,14 +256,18 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void showNotification() {
+        Intent pause = new Intent();
+        pause.setAction("org.stuartresearch.radio91x.ACTION_PAUSE");
+        PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, 0);
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.ic_headset_black_18dp)
                 .setOngoing(true)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
-                .setStyle(new NotificationCompat.BigPictureStyle())
-                .setContentTitle("91x")
-                .setContentText(String.format("You are listening to %s by %s on San Diego's 91x.",
-                        songText.getText(), artistText.getText()));
+                .setStyle(new NotificationCompat.BigTextStyle())
+                .setContentTitle(songText.getText())
+                .setContentText(artistText.getText())
+                .setContentInfo(artistText.getText())
+                        .addAction(R.drawable.ic_pause_black_18dp, "PAUSE", pausePending);
         Intent resultIntent = new Intent(this, MainActivity.class);
         resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
@@ -266,7 +284,28 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void hideNotification() {
-
+        Intent pause = new Intent();
+        pause.setAction("org.stuartresearch.radio91x.ACTION_PAUSE");
+        PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, 0);
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.ic_headset_black_18dp)
+                .setVisibility(Notification.VISIBILITY_PUBLIC)
+                .setStyle(new NotificationCompat.BigTextStyle())
+                .setContentTitle("91x")
+                .setContentText("Local. Independent. Radio.")
+                .addAction(R.drawable.ic_play_arrow_black_18dp, "PLAY", pausePending);
+        Intent resultIntent = new Intent(this, MainActivity.class);
+        resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addParentStack(MainActivity.class);
+        stackBuilder.addNextIntent(resultIntent);
+        PendingIntent resultPendingIntent = stackBuilder
+                .getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+        mBuilder.setContentIntent(resultPendingIntent);
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        Notification notification = mBuilder.build();
+        notificationManager.notify(919191, notification);
     }
 
     @Override
@@ -290,6 +329,8 @@ public class MainActivity extends ActionBarActivity {
         super.onDestroy();
         streamer.kill();
         stopParser();
+        msc.setActive(false);
+        msc.release();
     }
 
     @Override
@@ -297,5 +338,35 @@ public class MainActivity extends ActionBarActivity {
 
     }
 
+    private void lockScreenControls() {
 
+        // Use the media button APIs (if available) to register ourselves for media button
+        // events
+        msc.setCallback(new MediaSessionCompat.Callback() {
+            @Override
+            public void onStop() {
+                if (streamer.isPlaying()) {
+                    playPause.callOnClick();
+                }
+                super.onStop();
+            }
+
+            @Override
+            public void onPause() {
+                if (streamer.isPlaying()) {
+                    playPause.callOnClick();
+                }
+                super.onPause();
+            }
+
+            @Override
+            public void onPlay() {
+                if (!streamer.isPlaying()) {
+                    playPause.callOnClick();
+                }
+                super.onPlay();
+            }
+        });
+        msc.setActive(true);
+    }
 }

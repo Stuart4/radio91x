@@ -18,13 +18,13 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <receiver android:name="org.stuartresearch.radio91x.AudioPlayerBroadcastReceiver" >
-                <intent-filter>
-                    <action android:name="org.stuartresearch.radio91x.ACTION_PLAY" />
-                    <action android:name="org.stuartresearch.radio91x.ACTION_PAUSE" />
-                </intent-filter>
-            </receiver>
         </activity>
+        <receiver android:name="org.stuartresearch.radio91x.AudioPlayerBroadcastReceiver" >
+            <intent-filter>
+                <action android:name="org.stuartresearch.radio91x.ACTION_PLAY" />
+                <action android:name="org.stuartresearch.radio91x.ACTION_PAUSE" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
