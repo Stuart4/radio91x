@@ -11,13 +11,16 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toolbar;
 
 import com.nispok.snackbar.Snackbar;
 import com.nispok.snackbar.SnackbarManager;
 import com.nispok.snackbar.listeners.ActionClickListener;
+import com.nispok.snackbar.listeners.EventListener;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Transformation;
 
@@ -191,7 +194,40 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                             sample.release();
                             ((MainActivity) context).streamer.sound();
                         }
-                    }));
+                    })
+            .eventListener(new EventListener() {
+                @Override
+                public void onShow(Snackbar snackbar) {
+                    ((MainActivity) context).hideToolbar();
+                    ((MainActivity) context).showingSnackbar = true;
+                }
+
+                @Override
+                public void onShowByReplace(Snackbar snackbar) {
+
+                }
+
+                @Override
+                public void onShown(Snackbar snackbar) {
+
+                }
+
+                @Override
+                public void onDismiss(Snackbar snackbar) {
+                    ((MainActivity) context).showToolbar();
+                    ((MainActivity) context).showingSnackbar = false;
+                }
+
+                @Override
+                public void onDismissByReplace(Snackbar snackbar) {
+
+                }
+
+                @Override
+                public void onDismissed(Snackbar snackbar) {
+
+                }
+            }));
             ((MainActivity) context). streamer.noSound();
             try {
                 sample.setDataSource(context, Uri.parse(songInfoStack.get(i).songSample));
@@ -264,7 +300,40 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                                 songInfo.favorite = true;
                             }
                         }
-                    }));
+                    })
+            .eventListener(new EventListener() {
+                @Override
+                public void onShow(Snackbar snackbar) {
+                    ((MainActivity) context).hideToolbar();
+                    ((MainActivity) context).showingSnackbar = true;
+                }
+
+                @Override
+                public void onShowByReplace(Snackbar snackbar) {
+
+                }
+
+                @Override
+                public void onShown(Snackbar snackbar) {
+
+                }
+
+                @Override
+                public void onDismiss(Snackbar snackbar) {
+                    ((MainActivity) context).showToolbar();
+                    ((MainActivity) context).showingSnackbar = false;
+                }
+
+                @Override
+                public void onDismissByReplace(Snackbar snackbar) {
+
+                }
+
+                @Override
+                public void onDismissed(Snackbar snackbar) {
+
+                }
+            }));
         }
     }
 

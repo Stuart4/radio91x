@@ -23,6 +23,7 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
@@ -55,11 +56,13 @@ public class MainActivity extends ActionBarActivity {
     boolean toolbarShowing = true;
     RecyclerView recyclerView;
     boolean showingFavs = false;
+    boolean showingSnackbar = false;
     Streamer streamer;
     AudioManager.OnAudioFocusChangeListener afChangeListener;
     AudioManager audioManager;
     ImageView playPause;
     public boolean playingElsewhere = false;
+    Toolbar toolBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,7 +121,7 @@ public class MainActivity extends ActionBarActivity {
         recyclerView.setAdapter(cardAdapter);
         if (Build.VERSION.SDK_INT >20)
             getWindow().setNavigationBarColor(getResources().getColor(R.color.primary_dark));
-        final android.support.v7.widget.Toolbar toolBar =
+        toolBar =
                 (android.support.v7.widget.Toolbar) findViewById(R.id.lowerToolbar);
         ObservableRecyclerView orv = (ObservableRecyclerView) recyclerView;
         orv.setScrollViewCallbacks(new ObservableScrollViewCallbacks() {
@@ -132,13 +135,11 @@ public class MainActivity extends ActionBarActivity {
 
             @Override
             public void onUpOrCancelMotionEvent(ScrollState scrollState) {
-                if (scrollState == ScrollState.UP && toolbarShowing) {
-                    toolBar.animate().translationY(toolBar.getHeight()).setInterpolator(new AccelerateInterpolator()).start();
-                    toolbarShowing = false;
+                if (scrollState == ScrollState.UP && toolbarShowing && !showingSnackbar) {
+                    hideToolbar();
 
-                } else if (scrollState == ScrollState.DOWN && !toolbarShowing) {
-                    toolBar.animate().translationY(0).setInterpolator(new DecelerateInterpolator()).start();
-                    toolbarShowing = true;
+                } else if (scrollState == ScrollState.DOWN && !toolbarShowing && !showingSnackbar) {
+                    showToolbar();
                 }
             }
         });
@@ -345,6 +346,16 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onNewIntent(Intent intent) {
 
+    }
+
+    protected void showToolbar() {
+        toolBar.animate().translationY(0).setInterpolator(new DecelerateInterpolator()).start();
+        toolbarShowing = true;
+    }
+
+    protected void hideToolbar() {
+        toolBar.animate().translationY(toolBar.getHeight()).setInterpolator(new AccelerateInterpolator()).start();
+        toolbarShowing = false;
     }
 
 }

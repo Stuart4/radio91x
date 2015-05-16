@@ -60,6 +60,9 @@
                     android:layout_height="wrap_content"
                     android:id="@+id/songNameTextView"
                     android:textColor="@color/primary_text"
+                    android:ellipsize="marquee"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
                     android:text="Little Sister"
                     android:textSize="18sp"
                     android:textStyle="bold"/>
@@ -67,6 +70,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/primary_text"
+                    android:ellipsize="marquee"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
                     android:id="@+id/artistNameTextView"
                     android:text="Queens of the Stone Age"
                     android:textSize="16sp"/>
