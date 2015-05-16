@@ -57,16 +57,11 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         }
         songInfoHolder.songText.setText(songInfo.songName);
         songInfoHolder.artistText.setText(songInfo.artistName);
-        if (songInfo.imageUrl.length() > 0)
+        if (!songInfo.imageUrl.isEmpty())
             Picasso.with(songInfoHolder.context).load(songInfo.imageUrl)
-                    .placeholder(context.getResources().getDrawable(R.drawable.background))
                     .transform(new AlbumTransformation(songInfoHolder.albumImage))
                     .into(songInfoHolder.albumImage);
         else {
-            Picasso.with(songInfoHolder.context).
-                    load(R.drawable.background).
-                    transform(new AlbumTransformation(songInfoHolder.albumImage)).
-                    into(songInfoHolder.albumImage);
         }
         if (songInfoStack.get(pos).buySong.isEmpty()) {
             songInfoHolder.buySong.setVisibility(View.INVISIBLE);

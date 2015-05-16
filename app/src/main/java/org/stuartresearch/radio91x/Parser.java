@@ -15,6 +15,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.net.URL;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -141,7 +142,7 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
     }
 }
 
-class SongInfo {
+class SongInfo implements Serializable{
     String songName = new String();
     String artistName = new String();
     String imageUrl = new String();
