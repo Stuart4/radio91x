@@ -124,7 +124,7 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
                 e.printStackTrace();
             }
             try {
-                Thread.sleep(8000);
+                Thread.sleep(10000);
             } catch (InterruptedException e) {}
         }
         return null;

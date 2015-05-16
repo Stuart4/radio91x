@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaMetadataEditor;
 import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
 import android.media.RemoteControlClient;
 import android.net.Uri;
 import android.opengl.Visibility;
@@ -36,16 +37,20 @@ import android.widget.TextView;
 import com.github.ksoichiro.android.observablescrollview.ObservableRecyclerView;
 import com.github.ksoichiro.android.observablescrollview.ObservableScrollViewCallbacks;
 import com.github.ksoichiro.android.observablescrollview.ScrollState;
+import com.nispok.snackbar.Snackbar;
+import com.nispok.snackbar.SnackbarManager;
+import com.nispok.snackbar.listeners.ActionClickListener;
 import com.squareup.picasso.Picasso;
 
 import java.util.Stack;
+import java.util.Vector;
 
 public class MainActivity extends ActionBarActivity {
     ImageView albumView;
     TextView songText;
     TextView artistText;
     Parser parser;
-    Stack<SongInfo> songStack = new Stack<>();
+    Vector<SongInfo> songStack = new Vector<>();
     CardAdapter cardAdapter;
     boolean toolbarShowing = true;
     RecyclerView recyclerView;
@@ -54,7 +59,7 @@ public class MainActivity extends ActionBarActivity {
     AudioManager.OnAudioFocusChangeListener afChangeListener;
     AudioManager audioManager;
     ImageView playPause;
-    MediaSessionCompat msc;
+    public boolean playingElsewhere = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +70,7 @@ public class MainActivity extends ActionBarActivity {
         afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
             @Override
             public void onAudioFocusChange(int focusChange) {
+                if (playingElsewhere) return;
                 if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
                     if (streamer.isPlaying()) playPause.callOnClick();
                 } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK ||
@@ -136,8 +142,6 @@ public class MainActivity extends ActionBarActivity {
                 }
             }
         });
-        msc = new MediaSessionCompat(this, "radio91x");
-        lockScreenControls();
     }
 
     @Override
@@ -212,7 +216,14 @@ public class MainActivity extends ActionBarActivity {
             artistText.setText("");
             return;
         }
-        if (songStack.size() >= 2 && songInfo.trackId == songStack.peek().trackId) {
+        if (songStack.size() > 0 && songInfo.trackId == songStack.get(songStack.size() - 1).trackId) {
+            parser = new Parser(this);
+            parser.songTitle = songInfo.songName;
+            parser.artistName = songInfo.artistName;
+            parser.execute();
+            return;
+        }
+        if (songStack.size() > 1 && songInfo.trackId == songStack.get(songStack.size() - 2).trackId) {
             parser = new Parser(this);
             parser.songTitle = songInfo.songName;
             parser.artistName = songInfo.artistName;
@@ -223,7 +234,6 @@ public class MainActivity extends ActionBarActivity {
         artistText.setText(songInfo.artistName);
         if (songInfo.imageUrl.length() > 0) {
             Picasso.with(this).load(songInfo.imageUrl)
-                    .placeholder(getResources().getDrawable(R.drawable.notes_background))
                     .into(albumView);
             albumView.setVisibility(View.VISIBLE);
         } else {
@@ -233,7 +243,7 @@ public class MainActivity extends ActionBarActivity {
         parser.songTitle = songInfo.songName;
         parser.artistName = songInfo.artistName;
         if (songInfo.trackId != -666) {
-            songStack.push(songInfo);
+            songStack.add(songInfo);
             cardAdapter.notifyItemInserted(0);
             cardAdapter.notifyItemChanged(1);
             if (recyclerView.getScrollY() == 0)
@@ -266,7 +276,7 @@ public class MainActivity extends ActionBarActivity {
                 .setStyle(new NotificationCompat.BigTextStyle())
                 .setContentTitle(songText.getText())
                 .setContentText(artistText.getText())
-                .setContentInfo(artistText.getText())
+                .setColor(getResources().getColor(R.color.primary))
                         .addAction(R.drawable.ic_pause_black_18dp, "PAUSE", pausePending);
         Intent resultIntent = new Intent(this, MainActivity.class);
         resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -329,8 +339,7 @@ public class MainActivity extends ActionBarActivity {
         super.onDestroy();
         streamer.kill();
         stopParser();
-        msc.setActive(false);
-        msc.release();
+        hideNotification();
     }
 
     @Override
@@ -338,35 +347,4 @@ public class MainActivity extends ActionBarActivity {
 
     }
 
-    private void lockScreenControls() {
-
-        // Use the media button APIs (if available) to register ourselves for media button
-        // events
-        msc.setCallback(new MediaSessionCompat.Callback() {
-            @Override
-            public void onStop() {
-                if (streamer.isPlaying()) {
-                    playPause.callOnClick();
-                }
-                super.onStop();
-            }
-
-            @Override
-            public void onPause() {
-                if (streamer.isPlaying()) {
-                    playPause.callOnClick();
-                }
-                super.onPause();
-            }
-
-            @Override
-            public void onPlay() {
-                if (!streamer.isPlaying()) {
-                    playPause.callOnClick();
-                }
-                super.onPlay();
-            }
-        });
-        msc.setActive(true);
-    }
 }

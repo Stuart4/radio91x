@@ -6,6 +6,8 @@
     android:animateLayoutChanges="true"
     android:elevation="5dp"
     android:layout_height="match_parent"
+    android:clickable="true"
+    android:foreground="?selectableItemBackground"
     android:padding="10dp"
     card_view:cardCornerRadius="1dp"
     android:layout_margin="5dp">
@@ -77,21 +79,24 @@
                 <ImageButton
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
-                    android:padding="10dp"
-                    android:background="@android:color/white"
-                    android:src="@drawable/ic_favorite_outline_black_18dp"/>
-                <ImageButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
+                    android:id="@+id/buySongButton"
                     android:padding="10dp"
                     android:background="@android:color/white"
                     android:src="@drawable/ic_credit_card_black_18dp"/>
                 <ImageButton
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
+                    android:id="@+id/previewSongButton"
                     android:padding="10dp"
                     android:background="@android:color/white"
                     android:src="@drawable/ic_headset_black_18dp"/>
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:id="@+id/favoriteSongButton"
+                    android:padding="10dp"
+                    android:background="@android:color/white"
+                    android:src="@drawable/ic_favorite_outline_black_18dp"/>
             </LinearLayout>
 
         </LinearLayout>
