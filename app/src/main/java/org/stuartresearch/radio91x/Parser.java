@@ -149,6 +149,7 @@ class SongInfo {
     int trackId = 0;
     String buySong = new String();
     String songSample = new String();
+    boolean favorite = false;
 
     public String toString() {
         return songName + ":" + artistName + ":" + imageUrl;

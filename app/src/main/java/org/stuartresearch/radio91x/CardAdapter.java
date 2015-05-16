@@ -78,7 +78,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         } else {
             songInfoHolder.previewSong.setOnClickListener(new CardClickListenerPreview(pos));
         }
-        songInfoHolder.favoriteSong.setOnClickListener(new CardClickListenerBuy(pos));
+        songInfoHolder.favoriteSong.setOnClickListener(new CardClickListenerFavorite(pos));
 
     }
 
@@ -240,6 +240,36 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
         @Override
         public void onClick(View v) {
+            final SongInfo songInfo = songInfoStack.get(i);
+            final ImageView favoriteSong = (ImageView) v;
+            String snackString;
+            if (songInfo.favorite) {
+                favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_18dp);
+                songInfo.favorite = false;
+                snackString = String.format("Removed %s by %s to your favorites.", songInfo.songName, songInfo.artistName);
+            } else {
+                favoriteSong.setImageResource(R.drawable.ic_favorite_red_18dp);
+                songInfo.favorite = true;
+                snackString = String.format("Saved %s by %s to your favorites.", songInfo.songName, songInfo.artistName);
+
+            }
+            SnackbarManager.show(Snackbar.with(context).text(snackString)
+                    .actionColor(context.getResources().getColor(R.color.accent))
+                    .color(context.getResources().getColor(R.color.primary))
+                    .duration(Snackbar.SnackbarDuration.LENGTH_SHORT)
+                    .actionLabel("UNDO")
+                    .actionListener(new ActionClickListener() {
+                        @Override
+                        public void onActionClicked(Snackbar snackbar) {
+                            if (songInfo.favorite) {
+                                favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_18dp);
+                                songInfo.favorite = false;
+                            } else {
+                                favoriteSong.setImageResource(R.drawable.ic_favorite_red_18dp);
+                                songInfo.favorite = true;
+                            }
+                        }
+                    }));
         }
     }
 
