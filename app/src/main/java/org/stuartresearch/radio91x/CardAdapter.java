@@ -4,18 +4,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
-import android.media.MediaActionSound;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateInterpolator;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toolbar;
 
 import com.nispok.snackbar.Snackbar;
 import com.nispok.snackbar.SnackbarManager;
@@ -24,8 +20,6 @@ import com.nispok.snackbar.listeners.EventListener;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Transformation;
 
-import java.io.IOException;
-import java.util.Stack;
 import java.util.Vector;
 
 /**
@@ -35,12 +29,12 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
     private Vector<SongInfo> songInfoStack;
     Context context;
     private static FavoritesDataSource dataSource;
-    boolean favoriteMode = false;
+    static boolean playingTopCard = false;
 
-    public CardAdapter(Vector<SongInfo> stack, Context context, boolean favoriteMode) {
+    public CardAdapter(Vector<SongInfo> stack, Context context, boolean playingTopCard) {
         songInfoStack = stack;
         this.context = context;
-        this.favoriteMode = favoriteMode;
+        this.playingTopCard = playingTopCard;
     }
 
     public static void setDataSource(FavoritesDataSource newDataSource) {
@@ -63,7 +57,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
             songInfoHolder.favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_18dp);
         }
         SongInfo songInfo = songInfoStack.get(songInfoStack.size() - 1 - i);
-        if (i == 0 && !favoriteMode) {
+        if (i == 0 && playingTopCard) {
             songInfoHolder.background.setVisibility(View.VISIBLE);
             songInfoHolder.equalizer.setVisibility(View.VISIBLE);
             songInfoHolder.albumImage.setAlpha(.25f);

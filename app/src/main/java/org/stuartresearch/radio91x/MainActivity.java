@@ -33,6 +33,7 @@ import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -66,6 +67,7 @@ public class MainActivity extends ActionBarActivity {
     Toolbar toolBar;
     FavoritesDataSource favoritesDataSource;
     final MainActivity mainActivity = this;
+    final LinearLayoutManager lm = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,7 +120,6 @@ public class MainActivity extends ActionBarActivity {
             startParser();
         recyclerView = (RecyclerView) findViewById(R.id.cardList);
         recyclerView.setHasFixedSize(false);
-        LinearLayoutManager lm = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(lm);
         cardAdapter = new CardAdapter(songStack, this, false);
         recyclerView.setAdapter(cardAdapter);
@@ -200,12 +201,14 @@ public class MainActivity extends ActionBarActivity {
                     showingFavs = false;
                     cardAdapter = new CardAdapter(songStack, mainActivity, false);
                     recyclerView.setAdapter(cardAdapter);
+                    showToolbar();
                     return true;
                 } else {
                     showFavs.setIcon(getResources().getDrawable(R.drawable.ic_favorite_red_18dp));
                     showingFavs = true;
                     cardAdapter = new CardAdapter(favoritesDataSource.getFavorites(), mainActivity, true);
                     recyclerView.setAdapter(cardAdapter);
+                    showToolbar();
                     return true;
                 }
             }
@@ -233,6 +236,8 @@ public class MainActivity extends ActionBarActivity {
         if (songInfo.trackId == -655) {
             songText.setText("Out of Sync");
             artistText.setText("");
+            CardAdapter.playingTopCard = false;
+            cardAdapter.notifyItemChanged(0);
             return;
         }
         if (songStack.size() > 0 && songInfo.trackId == songStack.get(songStack.size() - 1).trackId) {
@@ -262,11 +267,15 @@ public class MainActivity extends ActionBarActivity {
         parser.songTitle = songInfo.songName;
         parser.artistName = songInfo.artistName;
         if (songInfo.trackId != -666) {
+            CardAdapter.playingTopCard = true;
             songStack.add(songInfo);
             cardAdapter.notifyItemInserted(0);
             cardAdapter.notifyItemChanged(1);
-            if (recyclerView.getScrollY() == 0)
+            if (lm.findFirstCompletelyVisibleItemPosition() == 0)
                 recyclerView.smoothScrollToPosition(0);
+        } else {
+            CardAdapter.playingTopCard = false;
+            cardAdapter.notifyItemChanged(0);
         }
         parser.execute();
         showNotification();
