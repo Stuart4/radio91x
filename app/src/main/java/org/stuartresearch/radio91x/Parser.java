@@ -147,7 +147,7 @@ class SongInfo implements Serializable{
     String artistName = new String();
     String imageUrl = new String();
     String jsonUrl = new String();
-    int trackId = 0;
+    long trackId = 0;
     String buySong = new String();
     String songSample = new String();
     boolean favorite = false;

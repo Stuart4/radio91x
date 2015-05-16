@@ -15,6 +15,7 @@ import android.media.MediaPlayer;
 import android.media.RemoteControlClient;
 import android.net.Uri;
 import android.opengl.Visibility;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
@@ -61,8 +62,10 @@ public class MainActivity extends ActionBarActivity {
     AudioManager.OnAudioFocusChangeListener afChangeListener;
     AudioManager audioManager;
     ImageView playPause;
-    public boolean playingElsewhere = false;
+    public static boolean playingElsewhere = false;
     Toolbar toolBar;
+    FavoritesDataSource favoritesDataSource;
+    final MainActivity mainActivity = this;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,7 +120,7 @@ public class MainActivity extends ActionBarActivity {
         recyclerView.setHasFixedSize(false);
         LinearLayoutManager lm = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(lm);
-        cardAdapter = new CardAdapter(songStack, this);
+        cardAdapter = new CardAdapter(songStack, this, false);
         recyclerView.setAdapter(cardAdapter);
         if (Build.VERSION.SDK_INT >20)
             getWindow().setNavigationBarColor(getResources().getColor(R.color.primary_dark));
@@ -143,6 +146,17 @@ public class MainActivity extends ActionBarActivity {
                 }
             }
         });
+        favoritesDataSource = new FavoritesDataSource(getApplicationContext());
+        try {
+            favoritesDataSource.open();
+            CardAdapter.setDataSource(favoritesDataSource);
+        } catch (Exception e) {
+            SnackbarManager.show(Snackbar.with(this).text("Favorites Database Unavailable")
+                    .actionColor(getResources().getColor(R.color.accent))
+                    .color(getResources().getColor(R.color.primary))
+                    .duration(Snackbar.SnackbarDuration.LENGTH_SHORT)
+                    .actionLabel("CLOSE"));
+        }
     }
 
     @Override
@@ -157,7 +171,7 @@ public class MainActivity extends ActionBarActivity {
             public boolean onMenuItemClick(MenuItem item) {
                 try {
                     Intent intent = new Intent(Intent.ACTION_DIAL);
-                    intent.setData(Uri.parse("tel:5701919"));
+                    intent.setData(Uri.parse("tel:18585701919"));
                     startActivity(intent);
                 } catch (Exception e) {
                     return false;
@@ -184,10 +198,14 @@ public class MainActivity extends ActionBarActivity {
                 if (showingFavs) {
                     showFavs.setIcon(getResources().getDrawable(R.drawable.ic_favorite_black_18dp));
                     showingFavs = false;
+                    cardAdapter = new CardAdapter(songStack, mainActivity, false);
+                    recyclerView.setAdapter(cardAdapter);
                     return true;
                 } else {
                     showFavs.setIcon(getResources().getDrawable(R.drawable.ic_favorite_red_18dp));
                     showingFavs = true;
+                    cardAdapter = new CardAdapter(favoritesDataSource.getFavorites(), mainActivity, true);
+                    recyclerView.setAdapter(cardAdapter);
                     return true;
                 }
             }
@@ -341,6 +359,8 @@ public class MainActivity extends ActionBarActivity {
         streamer.kill();
         stopParser();
         hideNotification();
+        favoritesDataSource.close();
+        Log.d("91x", "DESTROYED!!!");
     }
 
     @Override

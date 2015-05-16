@@ -34,10 +34,17 @@ import java.util.Vector;
 public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder> {
     private Vector<SongInfo> songInfoStack;
     Context context;
+    private static FavoritesDataSource dataSource;
+    boolean favoriteMode = false;
 
-    public CardAdapter(Vector<SongInfo> stack, Context context) {
+    public CardAdapter(Vector<SongInfo> stack, Context context, boolean favoriteMode) {
         songInfoStack = stack;
         this.context = context;
+        this.favoriteMode = favoriteMode;
+    }
+
+    public static void setDataSource(FavoritesDataSource newDataSource) {
+        dataSource = newDataSource;
     }
 
     @Override
@@ -48,8 +55,15 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
     @Override
     public void onBindViewHolder(SongInfoHolder songInfoHolder, int i) {
         int pos = songInfoStack.size() - 1 - i;
+        if (dataSource == null) {
+            songInfoHolder.favoriteSong.setVisibility(View.INVISIBLE);
+        } else if (dataSource.isFavorite(songInfoStack.get(pos))) {
+            songInfoHolder.favoriteSong.setImageResource(R.drawable.ic_favorite_red_18dp);
+        } else {
+            songInfoHolder.favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_18dp);
+        }
         SongInfo songInfo = songInfoStack.get(songInfoStack.size() - 1 - i);
-        if (i == 0) {
+        if (i == 0 && !favoriteMode) {
             songInfoHolder.background.setVisibility(View.VISIBLE);
             songInfoHolder.equalizer.setVisibility(View.VISIBLE);
             songInfoHolder.albumImage.setAlpha(.25f);
@@ -146,6 +160,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         public void onClick(View v) {
             Intent intent = new Intent(Intent.ACTION_VIEW,
                     Uri.parse(songInfoStack.get(i).buySong));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
     }
@@ -160,7 +175,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         public void onClick(View v) {
             final MediaPlayer sample = new MediaPlayer();
             AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            ((MainActivity) context).playingElsewhere = true;
+            MainActivity.playingElsewhere = true;
             AudioManager.OnAudioFocusChangeListener afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
                 @Override
                 public void onAudioFocusChange(int focusChange) {
@@ -278,11 +293,12 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                 favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_18dp);
                 songInfo.favorite = false;
                 snackString = String.format("Removed %s by %s to your favorites.", songInfo.songName, songInfo.artistName);
+                dataSource.unfavorite(songInfo);
             } else {
                 favoriteSong.setImageResource(R.drawable.ic_favorite_red_18dp);
                 songInfo.favorite = true;
                 snackString = String.format("Saved %s by %s to your favorites.", songInfo.songName, songInfo.artistName);
-
+                dataSource.favorite(songInfo);
             }
             SnackbarManager.show(Snackbar.with(context).text(snackString)
                     .actionColor(context.getResources().getColor(R.color.accent))
@@ -295,9 +311,11 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                             if (songInfo.favorite) {
                                 favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_18dp);
                                 songInfo.favorite = false;
+                                dataSource.unfavorite(songInfo);
                             } else {
                                 favoriteSong.setImageResource(R.drawable.ic_favorite_red_18dp);
                                 songInfo.favorite = true;
+                                dataSource.favorite(songInfo);
                             }
                         }
                     })
