@@ -6,6 +6,7 @@ import android.util.Log;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xml.sax.Attributes;
@@ -50,82 +51,76 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
                         trackData.title));
                 if (!songTitle.equals(trackData.title)) {
                     if (!artistName.equals(trackData.artist)) {
-                        SAXParser sp = spf.newSAXParser();
-                        DefaultHand hand = new DefaultHand();
-                        sp.parse("http://np.tritondigital.com/public/nowplaying?mountName=XTRAFM" +
-                                "&numberToFetch=1&random=" + System.currentTimeMillis(), hand);
-                        if (hand.songInfo.artistName.equals(trackData.artist) &&
-                                hand.songInfo.songName.equals(trackData.title)) {
-                            songTitle = trackData.title;
-                            artistName = trackData.artist;
-                            if (hand.songInfo.trackId == -666) {
-                                hand.songInfo.songName = "Advertisement";
-                                return hand.songInfo;
+                        songTitle = trackData.title;
+                        artistName = trackData.artist;
+                        SongInfo songInfo = new SongInfo();
+                        if (songTitle.isEmpty() && artistName.isEmpty()) {
+                            songInfo.trackId = -666;
+                            songInfo.songName = "Advertisement";
+                            return songInfo;
+                        }
+                        DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
+                        String jsonUrl = String.format("https://itunes.apple.com/search?term=" +
+                                        "%s+%s&country=us&callback=results&limit=1&entity=song",
+                                songTitle.replace(" ", "+"), artistName.replace(" ", "+"));
+                        HttpGet httpGet = new HttpGet(jsonUrl);
+                        try {
+                            HttpResponse httpResponse = defaultHttpClient.execute(httpGet);
+                            BufferedReader reader =
+                                    new BufferedReader(new InputStreamReader(httpResponse.
+                                            getEntity().getContent(), "UTF-8"));
+                            String line;
+                            String json = new String();
+                            reader.readLine();
+                            reader.readLine();
+                            reader.readLine();
+
+                            while ((line = reader.readLine()) != null) {
+                                json += line;
                             }
-                            DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
-                            HttpGet httpGet = new HttpGet(hand.songInfo.jsonUrl);
+                            json = json.substring(0, json.length() - 2);
+                            JSONObject jsonObject = new JSONObject(json);
+                            JSONArray jsonArray = jsonObject.getJSONArray("results");
+                            jsonObject = jsonArray.getJSONObject(0);
                             try {
-                                HttpResponse httpResponse = defaultHttpClient.execute(httpGet);
-                                BufferedReader reader =
-                                        new BufferedReader(new InputStreamReader(httpResponse.
-                                                getEntity().getContent(), "UTF-8"));
-                                String line;
-                                String json = new String();
-                                while ((line = reader.readLine()) != null) {
-                                    json += line;
-                                }
-                                JSONObject jsonObject = new JSONObject(json);
-                                //inconsistent Url URL - try both
-                                try {
-                                    hand.songInfo.imageUrl = jsonObject.getJSONObject("song")
-                                            .getJSONObject("album").getJSONObject("cover")
-                                            .getString("originalSourceUrl");
-                                } catch (Exception e) {
-                                    try {
-                                        hand.songInfo.imageUrl = jsonObject.getJSONObject("song")
-                                                .getJSONObject("album").getJSONObject("cover")
-                                                .getString("originalSourceURL");
-                                    } catch (Exception x) {}
-                                }
-                                try {
-                                    hand.songInfo.songSample = jsonObject.getJSONObject("song")
-                                            .getJSONObject("track").getString("sampleURL");
-                                } catch (Exception e) {
-                                    try {
-                                        hand.songInfo.songSample = jsonObject.getJSONObject("song")
-                                                .getJSONObject("track").getString("sampleUrl");
-                                    } catch (Exception x) {}
-                                }
-                                try {
-                                    hand.songInfo.buySong = jsonObject.getJSONObject("song")
-                                            .getJSONObject("track").getString("buyURL");
-                                } catch (Exception e) {
-                                    try {
-                                        hand.songInfo.buySong = jsonObject.getJSONObject("song")
-                                                .getJSONObject("track").getString("buyUrl");
-                                    } catch (Exception x) {}
-                                }
-                                return hand.songInfo;
-                            } catch (Exception e) {
-                                return hand.songInfo;
+                                songInfo.imageUrl = jsonObject.getString("artworkUrl100");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
                             }
-                        }
-                        //stream data and xml do not match
-                        else {
-                            hand.songInfo.trackId = -665;
-                            return hand.songInfo;
-                        }
+                            try {
+                                songInfo.songSample = jsonObject.getString("previewUrl");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            try {
+                                songInfo.songName = jsonObject.getString("trackName");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            try {
+                                songInfo.artistName = jsonObject.getString("artistName");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            try {
+                                songInfo.buySong = jsonObject.getString("trackViewUrl");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            try {
+                                songInfo.trackId = jsonObject.getLong("trackId");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            return songInfo;
+                        } catch (Exception e) {e.printStackTrace();}
                     }
                 }
-            } catch (ParserConfigurationException e) {
-                e.printStackTrace();
-            } catch (SAXException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
             try {
-                Thread.sleep(10000);
+                Thread.sleep(30000);
             } catch (InterruptedException e) {}
         }
         return null;
@@ -158,69 +153,6 @@ class SongInfo implements Serializable{
 
     public boolean equals(SongInfo song) {
         return song.trackId == trackId;
-    }
-}
-
-
-class DefaultHand extends DefaultHandler {
-    boolean song = false;
-    boolean artist = false;
-    boolean url = false;
-    boolean id = false;
-    boolean ad = false;
-    SongInfo songInfo = new SongInfo();
-
-    @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
-        if (qName.compareTo("property") == 0 && !ad) {
-            switch (attributes.getValue(0)) {
-                case "ad_id":
-                    ad = true;
-                    return;
-                case "cue_title":
-                    song = true;
-                    break;
-                case "track_artist_name":
-                    artist = true;
-                    break;
-                case "track_nowplaying_url":
-                    url = true;
-                    break;
-                case "track_id":
-                    id = true;
-                    break;
-            }
-        }
-    }
-
-    @Override
-    public void endElement(String uri, String localName, String qName) throws SAXException {
-        if (qName.compareTo("property") == 0) {
-            song = false;
-            artist = false;
-            url = false;
-        }
-    }
-
-    @Override
-    public void characters(char[] ch, int start, int length) throws SAXException {
-        if (ad) {
-            songInfo.trackId = -666;
-            return;
-        } else if (song) {
-            songInfo.songName = new String(ch).substring(start, length);
-            return;
-        } else if (artist) {
-            songInfo.artistName = new String(ch).substring(start, length);
-            return;
-        } else if (url) {
-            songInfo.jsonUrl = new String(ch).substring(start, length);
-            return;
-        } else if (id) {
-            songInfo.trackId = Integer.valueOf(new String(ch).substring(start, length));
-            return;
-        }
     }
 }
 
