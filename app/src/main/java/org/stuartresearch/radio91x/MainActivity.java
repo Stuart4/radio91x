@@ -299,7 +299,7 @@ public class MainActivity extends ActionBarActivity {
     public void showNotification() {
         Intent pause = new Intent();
         pause.setAction("org.stuartresearch.radio91x.ACTION_PAUSE");
-        PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, PendingIntent.FLAG_ONE_SHOT);
         NotificationCompat.Builder mBuilder = null;
         mBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.ic_music_note_black_18dp)
@@ -310,11 +310,9 @@ public class MainActivity extends ActionBarActivity {
                 .setColor(getResources().getColor(R.color.primary));
 
         Intent resultIntent = new Intent(this, MainActivity.class);
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-        stackBuilder.addParentStack(MainActivity.class);
-        stackBuilder.addNextIntent(resultIntent);
-        PendingIntent resultPendingIntent = stackBuilder
-                .getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+        resultIntent.setAction(Intent.ACTION_MAIN);
+        resultIntent.addCategory(Intent.CATEGORY_HOME);
+        PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder.setContentIntent(resultPendingIntent);
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -326,6 +324,8 @@ public class MainActivity extends ActionBarActivity {
         smallView.setImageViewResource(R.id.miniNotificationButton, R.drawable.ic_pause_black_18dp);
         smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
         notification.contentView = smallView;
+        notification.priority = Notification.PRIORITY_MAX;
+        notification.contentIntent = resultPendingIntent;
         notificationManager.notify(919191, notification);
 
     }
