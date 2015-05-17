@@ -202,14 +202,14 @@ public class MainActivity extends ActionBarActivity {
                 if (showingFavs) {
                     showFavs.setIcon(getResources().getDrawable(R.drawable.ic_favorite_black_18dp));
                     showingFavs = false;
-                    cardAdapter = new CardAdapter(songStack, mainActivity, false);
+                    cardAdapter = new CardAdapter(songStack, mainActivity, true);
                     recyclerView.setAdapter(cardAdapter);
                     showToolbar();
                     return true;
                 } else {
                     showFavs.setIcon(getResources().getDrawable(R.drawable.ic_favorite_red_18dp));
                     showingFavs = true;
-                    cardAdapter = new CardAdapter(favoritesDataSource.getFavorites(), mainActivity, true);
+                    cardAdapter = new CardAdapter(favoritesDataSource.getFavorites(), mainActivity, false);
                     recyclerView.setAdapter(cardAdapter);
                     showToolbar();
                     return true;
@@ -299,7 +299,7 @@ public class MainActivity extends ActionBarActivity {
     public void showNotification() {
         Intent pause = new Intent();
         pause.setAction("org.stuartresearch.radio91x.ACTION_PAUSE");
-        PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, 0);
+        PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
         NotificationCompat.Builder mBuilder = null;
         mBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.ic_music_note_black_18dp)
@@ -310,7 +310,6 @@ public class MainActivity extends ActionBarActivity {
                 .setColor(getResources().getColor(R.color.primary));
 
         Intent resultIntent = new Intent(this, MainActivity.class);
-        resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
         stackBuilder.addParentStack(MainActivity.class);
         stackBuilder.addNextIntent(resultIntent);
