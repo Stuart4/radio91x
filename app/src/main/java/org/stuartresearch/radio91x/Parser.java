@@ -83,7 +83,7 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
                             JSONArray jsonArray = jsonObject.getJSONArray("results");
                             jsonObject = jsonArray.getJSONObject(0);
                             try {
-                                songInfo.imageUrl = jsonObject.getString("artworkUrl100");
+                                songInfo.imageUrl = jsonObject.getString("artworkUrl100").replaceFirst("100x100-75.jpg$", "600x600-50.jpg");
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
