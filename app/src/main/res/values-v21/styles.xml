@@ -2,4 +2,6 @@
 <resources>
     <style name="AppTheme" parent="Theme.AppCompat.Light">
     </style>
+    <style name="NotificationTitle" parent="android:TextAppearance.Material.Notification.Title"></style>
+    <style name="NotificationText" parent="android:TextAppearance.Material.Notification"></style>
 </resources>

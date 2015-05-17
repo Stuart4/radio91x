@@ -20,7 +20,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".NotificationActivity"></activity>
         <receiver android:name="org.stuartresearch.radio91x.AudioPlayerBroadcastReceiver" >
             <intent-filter>
                 <action android:name="org.stuartresearch.radio91x.ACTION_PLAY" />

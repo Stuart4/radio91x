@@ -326,8 +326,8 @@ public class MainActivity extends ActionBarActivity {
         notification.contentView = smallView;
         notification.priority = Notification.PRIORITY_MAX;
         notification.contentIntent = resultPendingIntent;
+        notificationManager.cancel(919191);
         notificationManager.notify(919191, notification);
-
     }
 
     public void hideNotification() {
@@ -343,23 +343,23 @@ public class MainActivity extends ActionBarActivity {
                 .setColor(getResources().getColor(R.color.primary));
 
         Intent resultIntent = new Intent(this, MainActivity.class);
-        resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-        stackBuilder.addParentStack(MainActivity.class);
-        stackBuilder.addNextIntent(resultIntent);
-        PendingIntent resultPendingIntent = stackBuilder
-                .getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+        resultIntent.setAction(Intent.ACTION_MAIN);
+        resultIntent.addCategory(Intent.CATEGORY_HOME);
+        PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder.setContentIntent(resultPendingIntent);
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         Notification notification = mBuilder.build();
         RemoteViews smallView = new RemoteViews(this.getPackageName(),
                 R.layout.mini_notification_layout);
-        smallView.setTextViewText(R.id.miniNotificationSongName, "91x");
-        smallView.setTextViewText(R.id.miniNotificationArtistName, "Local. Independent. Radio");
+        smallView.setTextViewText(R.id.miniNotificationSongName, songText.getText());
+        smallView.setTextViewText(R.id.miniNotificationArtistName, artistText.getText());
         smallView.setImageViewResource(R.id.miniNotificationButton, R.drawable.ic_play_arrow_black_18dp);
         smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
         notification.contentView = smallView;
+        notification.priority = Notification.PRIORITY_HIGH;
+        notification.contentIntent = resultPendingIntent;
+        notificationManager.cancel(919191);
         notificationManager.notify(919191, notification);
     }
 
