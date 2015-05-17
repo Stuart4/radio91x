@@ -52,9 +52,9 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         if (dataSource == null) {
             songInfoHolder.favoriteSong.setVisibility(View.INVISIBLE);
         } else if (dataSource.isFavorite(songInfoStack.get(pos))) {
-            songInfoHolder.favoriteSong.setImageResource(R.drawable.ic_favorite_red_18dp);
+            songInfoHolder.favoriteSong.setImageResource(R.drawable.ic_favorite_red_24dp);
         } else {
-            songInfoHolder.favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_18dp);
+            songInfoHolder.favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_24dp);
         }
         SongInfo songInfo = songInfoStack.get(songInfoStack.size() - 1 - i);
         if (i == 0 && playingTopCard) {
@@ -130,10 +130,15 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
         @Override public Bitmap transform(Bitmap source) {
             int x = 0;
-            int y = (source.getHeight() / 2) - albumImage.getHeight();
-            Bitmap result = Bitmap.createBitmap(source, x, y >= 0 ? y : 0,
-                    Math.min(albumImage.getWidth(), source.getWidth()),
-                    Math.min(albumImage.getHeight(), source.getHeight() / 2));
+            int y = (source.getHeight() - albumImage.getHeight()) / 2;
+            Bitmap result;
+            try {
+                result = Bitmap.createBitmap(source, x, y >= 0 ? y : 0,
+                        Math.min(albumImage.getWidth(), source.getWidth()),
+                        Math.min(albumImage.getHeight(), source.getHeight()));
+            } catch (Exception e) {
+                return source;
+            }
             if (result != source) {
                 source.recycle();
             }
@@ -285,12 +290,12 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
             final ImageView favoriteSong = (ImageView) v;
             String snackString;
             if (songInfo.favorite) {
-                favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_18dp);
+                favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_24dp);
                 songInfo.favorite = false;
                 snackString = String.format("Removed %s by %s to your favorites.", songInfo.songName, songInfo.artistName);
                 dataSource.unfavorite(songInfo);
             } else {
-                favoriteSong.setImageResource(R.drawable.ic_favorite_red_18dp);
+                favoriteSong.setImageResource(R.drawable.ic_favorite_red_24dp);
                 songInfo.favorite = true;
                 snackString = String.format("Saved %s by %s to your favorites.", songInfo.songName, songInfo.artistName);
                 dataSource.favorite(songInfo);
@@ -304,11 +309,11 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                         @Override
                         public void onActionClicked(Snackbar snackbar) {
                             if (songInfo.favorite) {
-                                favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_18dp);
+                                favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_24dp);
                                 songInfo.favorite = false;
                                 dataSource.unfavorite(songInfo);
                             } else {
-                                favoriteSong.setImageResource(R.drawable.ic_favorite_red_18dp);
+                                favoriteSong.setImageResource(R.drawable.ic_favorite_red_24dp);
                                 songInfo.favorite = true;
                                 dataSource.favorite(songInfo);
                             }

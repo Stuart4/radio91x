@@ -9,9 +9,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
+
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -19,22 +17,18 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.net.URL;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
 /**
  * Created by jake on 5/13/15.
  */
 public class Parser extends AsyncTask<Void, Void, SongInfo> {
     boolean running = true;
-    private SAXParserFactory spf;
+
     MainActivity main;
     String songTitle = new String();
     String artistName = new String();
 
     public Parser(MainActivity mainActivity) {
-        spf = SAXParserFactory.newInstance();
         main = mainActivity;
     }
 
@@ -83,7 +77,8 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
                             JSONArray jsonArray = jsonObject.getJSONArray("results");
                             jsonObject = jsonArray.getJSONObject(0);
                             try {
-                                songInfo.imageUrl = jsonObject.getString("artworkUrl100").replaceFirst("100x100-75.jpg$", "600x600-50.jpg");
+                                songInfo.imageUrl = jsonObject.getString("artworkUrl100")
+                                        .replaceFirst("100x100-75.jpg$", "600x600-50.jpg");
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
@@ -141,7 +136,6 @@ class SongInfo implements Serializable{
     String songName = new String();
     String artistName = new String();
     String imageUrl = new String();
-    String jsonUrl = new String();
     long trackId = 0;
     String buySong = new String();
     String songSample = new String();

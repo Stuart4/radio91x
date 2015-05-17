@@ -4,7 +4,7 @@
     android:orientation="horizontal">
 
     <ImageView
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:id="@+id/miniNotificationImageView"
         android:padding="10dp"
         android:layout_gravity="center_vertical"
@@ -12,16 +12,16 @@
         android:layout_weight="1"
         android:layout_height="match_parent" />
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="1"
+        android:layout_weight="0"
         android:padding="10dp"
         android:orientation="vertical">
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="16sp"
-            android:textColor="@color/primary_text"
+            style="@style/NotificationTitle"
             android:ellipsize="marquee"
             android:textAlignment="textStart"
             android:focusable="true"
@@ -31,23 +31,29 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            style="@style/NotificationText"
             android:textSize="14sp"
             android:textAlignment="textStart"
-            android:textColor="@color/button_material_dark"
             android:ellipsize="marquee"
             android:focusable="true"
             android:id="@+id/miniNotificationArtistName"
             android:focusableInTouchMode="true"
             android:text="Queens of the Stone Age"/>
     </LinearLayout>
-    <ImageButton
+    <RelativeLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_gravity="center_vertical|right"
+        android:layout_gravity="center_vertical|right">
+
+    </RelativeLayout>
+    <ImageButton
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        style="@style/NotificationButton"
         android:padding="10dp"
-        android:layout_weight="0"
+        android:layout_weight="1"
         android:id="@+id/miniNotificationButton"
-        android:background="@android:color/transparent"
+        android:background="@color/accent"
         android:src="@drawable/ic_pause_black_18dp"
         />
 </LinearLayout>

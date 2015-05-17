@@ -1,32 +1,19 @@
 package org.stuartresearch.radio91x;
 
-import android.app.MediaRouteButton;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.TaskStackBuilder;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.media.AudioManager;
-import android.media.MediaMetadataEditor;
-import android.media.MediaMetadataRetriever;
-import android.media.MediaPlayer;
-import android.media.RemoteControlClient;
 import android.net.Uri;
-import android.opengl.Visibility;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.media.MediaMetadataCompat;
-import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -34,7 +21,6 @@ import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RemoteViews;
 import android.widget.TextView;
@@ -44,11 +30,8 @@ import com.github.ksoichiro.android.observablescrollview.ObservableScrollViewCal
 import com.github.ksoichiro.android.observablescrollview.ScrollState;
 import com.nispok.snackbar.Snackbar;
 import com.nispok.snackbar.SnackbarManager;
-import com.nispok.snackbar.listeners.ActionClickListener;
 import com.squareup.picasso.Picasso;
 
-import java.io.IOException;
-import java.util.Stack;
 import java.util.Vector;
 
 public class MainActivity extends ActionBarActivity {
@@ -105,7 +88,7 @@ public class MainActivity extends ActionBarActivity {
                 if (streamer.isPlaying()) {
                     streamer.stop();
                     stopParser();
-                    playPause.setImageResource(R.drawable.ic_play_arrow_black_18dp);
+                    playPause.setImageResource(R.drawable.ic_play_circle_outline_black_36dp);
                     hideNotification();
                 } else {
                     int res = audioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
@@ -113,7 +96,7 @@ public class MainActivity extends ActionBarActivity {
                     streamer.play();
                     showNotification();
                     startParser();
-                    playPause.setImageResource(R.drawable.ic_pause_black_18dp);
+                    playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_36dp);
                     showNotification();
                 }
             }
@@ -122,7 +105,8 @@ public class MainActivity extends ActionBarActivity {
         if (res != AudioManager.AUDIOFOCUS_REQUEST_FAILED)
             startParser();
         recyclerView = (RecyclerView) findViewById(R.id.cardList);
-        recyclerView.setHasFixedSize(false);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setHasTransientState(false);
         recyclerView.setLayoutManager(lm);
         cardAdapter = new CardAdapter(songStack, this, false);
         recyclerView.setAdapter(cardAdapter);
@@ -200,14 +184,18 @@ public class MainActivity extends ActionBarActivity {
             public boolean onMenuItemClick(MenuItem item) {
                 //TODO
                 if (showingFavs) {
-                    showFavs.setIcon(getResources().getDrawable(R.drawable.ic_favorite_black_18dp));
+                    showFavs.setIcon(getResources().getDrawable(R.drawable.ic_favorite_black_24dp));
                     showingFavs = false;
-                    cardAdapter = new CardAdapter(songStack, mainActivity, true);
+                    if (songStack.get(songStack.size() - 1).trackId == -666) {
+                        cardAdapter = new CardAdapter(songStack, mainActivity, false);
+                    } else {
+                        cardAdapter = new CardAdapter(songStack, mainActivity, true);
+                    }
                     recyclerView.setAdapter(cardAdapter);
                     showToolbar();
                     return true;
                 } else {
-                    showFavs.setIcon(getResources().getDrawable(R.drawable.ic_favorite_red_18dp));
+                    showFavs.setIcon(getResources().getDrawable(R.drawable.ic_favorite_red_24dp));
                     showingFavs = true;
                     cardAdapter = new CardAdapter(favoritesDataSource.getFavorites(), mainActivity, false);
                     recyclerView.setAdapter(cardAdapter);
@@ -302,7 +290,7 @@ public class MainActivity extends ActionBarActivity {
         PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, PendingIntent.FLAG_ONE_SHOT);
         NotificationCompat.Builder mBuilder = null;
         mBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_music_note_black_18dp)
+                .setSmallIcon(R.drawable.ic_radio_white_24dp)
                 .setOngoing(true)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setContentTitle(songText.getText())
@@ -321,7 +309,7 @@ public class MainActivity extends ActionBarActivity {
                 R.layout.mini_notification_layout);
         smallView.setTextViewText(R.id.miniNotificationSongName, songText.getText());
         smallView.setTextViewText(R.id.miniNotificationArtistName, artistText.getText());
-        smallView.setImageViewResource(R.id.miniNotificationButton, R.drawable.ic_pause_black_18dp);
+        smallView.setImageViewResource(R.id.miniNotificationButton, R.drawable.ic_pause_black_24dp);
         smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
         notification.contentView = smallView;
         notification.priority = Notification.PRIORITY_MAX;
@@ -336,7 +324,7 @@ public class MainActivity extends ActionBarActivity {
         PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, 0);
         NotificationCompat.Builder mBuilder = null;
         mBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_music_note_black_18dp)
+                .setSmallIcon(R.drawable.ic_radio_white_24dp)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setContentTitle(songText.getText())
                 .setContentText(artistText.getText())
@@ -354,7 +342,7 @@ public class MainActivity extends ActionBarActivity {
                 R.layout.mini_notification_layout);
         smallView.setTextViewText(R.id.miniNotificationSongName, songText.getText());
         smallView.setTextViewText(R.id.miniNotificationArtistName, artistText.getText());
-        smallView.setImageViewResource(R.id.miniNotificationButton, R.drawable.ic_play_arrow_black_18dp);
+        smallView.setImageViewResource(R.id.miniNotificationButton, R.drawable.ic_play_arrow_black_24dp);
         smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
         notification.contentView = smallView;
         notification.priority = Notification.PRIORITY_HIGH;

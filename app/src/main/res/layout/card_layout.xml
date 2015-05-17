@@ -42,7 +42,7 @@
                 android:id="@+id/playingEqualizer"
                 android:visibility="gone"
                 android:layout_centerInParent="true"
-                android:src="@drawable/ic_equalizer_black_18dp"
+                android:src="@drawable/ic_equalizer_black_36dp"
                 android:scaleType="center"/>
         </RelativeLayout>
         <LinearLayout
@@ -80,36 +80,38 @@
 
             <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
                 android:layout_weight="0">
 
                 <ImageButton
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:id="@+id/buySongButton"
+                    android:layout_weight="1"
                     android:padding="10dp"
-                    android:background="@android:color/white"
+                    android:background="@android:color/transparent"
                     android:clickable="true"
-                    android:foreground="?selectableItemBackground"
-                    android:src="@drawable/ic_credit_card_black_18dp"/>
+                    android:src="@drawable/ic_credit_card_black_24dp"/>
                 <ImageButton
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:id="@+id/previewSongButton"
-                    android:padding="10dp"
-                    android:background="@android:color/white"
-                    android:clickable="true"
-                    android:foreground="?selectableItemBackground"
-                    android:src="@drawable/ic_headset_black_18dp"/>
-                <ImageButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
+                    android:layout_weight="1"
                     android:id="@+id/favoriteSongButton"
                     android:padding="10dp"
-                    android:background="@android:color/white"
+                    android:background="@android:color/transparent"
                     android:clickable="true"
-                    android:foreground="?selectableItemBackground"
-                    android:src="@drawable/ic_favorite_outline_black_18dp"/>
+                    android:src="@drawable/ic_favorite_outline_black_24dp"/>
+                <ImageButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:id="@+id/previewSongButton"
+                    android:padding="10dp"
+                    android:background="@android:color/transparent"
+                    android:clickable="true"
+                    android:src="@drawable/ic_headset_black_24dp"/>
+
             </LinearLayout>
 
         </LinearLayout>

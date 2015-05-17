@@ -4,5 +4,8 @@
     <style name="AppTheme" parent="Theme.AppCompat.Light">
         <!-- Customize your theme here. -->
     </style>
+    <style name="NotificationText" parent="android:TextAppearance.StatusBar.EventContent" />
+    <style name="NotificationTitle" parent="android:TextAppearance.StatusBar.EventContent.Title" />
+    <style name="NotificationButton" parent="android:TextAppearance.StatusBar.Icon" />
 
 </resources>
