@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@android:color/white"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:layout_width="0dp"
+        android:id="@+id/miniNotificationImageView"
+        android:padding="10dp"
+        android:layout_gravity="center_vertical"
+        android:src="@drawable/x91"
+        android:layout_weight="1"
+        android:layout_height="match_parent" />
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:padding="10dp"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary_text"
+            android:ellipsize="marquee"
+            android:textAlignment="textStart"
+            android:focusable="true"
+            android:id="@+id/miniNotificationSongName"
+            android:focusableInTouchMode="true"
+            android:text="Little Sister"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textAlignment="textStart"
+            android:textColor="@color/primary_text"
+            android:ellipsize="marquee"
+            android:focusable="true"
+            android:id="@+id/miniNotificationArtistName"
+            android:focusableInTouchMode="true"
+            android:text="Queens of the Stone Age"/>
+    </LinearLayout>
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_vertical|right"
+        android:padding="10dp"
+        android:layout_weight="0"
+        android:id="@+id/miniNotificationButton"
+        android:background="@android:color/white"
+        android:src="@drawable/ic_pause_black_18dp"
+        />
+</LinearLayout>

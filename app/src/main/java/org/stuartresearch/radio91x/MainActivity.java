@@ -8,6 +8,7 @@ import android.app.TaskStackBuilder;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.media.MediaMetadataEditor;
 import android.media.MediaMetadataRetriever;
@@ -35,6 +36,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RemoteViews;
 import android.widget.TextView;
 
 import com.github.ksoichiro.android.observablescrollview.ObservableRecyclerView;
@@ -45,6 +47,7 @@ import com.nispok.snackbar.SnackbarManager;
 import com.nispok.snackbar.listeners.ActionClickListener;
 import com.squareup.picasso.Picasso;
 
+import java.io.IOException;
 import java.util.Stack;
 import java.util.Vector;
 
@@ -297,15 +300,15 @@ public class MainActivity extends ActionBarActivity {
         Intent pause = new Intent();
         pause.setAction("org.stuartresearch.radio91x.ACTION_PAUSE");
         PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, 0);
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_headset_black_18dp)
+        NotificationCompat.Builder mBuilder = null;
+        mBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.ic_music_note_black_18dp)
                 .setOngoing(true)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
-                .setStyle(new NotificationCompat.BigTextStyle())
                 .setContentTitle(songText.getText())
                 .setContentText(artistText.getText())
-                .setColor(getResources().getColor(R.color.primary))
-                        .addAction(R.drawable.ic_pause_black_18dp, "PAUSE", pausePending);
+                .setColor(getResources().getColor(R.color.primary));
+
         Intent resultIntent = new Intent(this, MainActivity.class);
         resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
@@ -317,21 +320,29 @@ public class MainActivity extends ActionBarActivity {
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         Notification notification = mBuilder.build();
+        RemoteViews smallView = new RemoteViews(this.getPackageName(),
+                R.layout.mini_notification_layout);
+        smallView.setTextViewText(R.id.miniNotificationSongName, songText.getText());
+        smallView.setTextViewText(R.id.miniNotificationArtistName, artistText.getText());
+        smallView.setImageViewResource(R.id.miniNotificationButton, R.drawable.ic_pause_black_18dp);
+        smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
+        notification.contentView = smallView;
         notificationManager.notify(919191, notification);
 
     }
 
     public void hideNotification() {
         Intent pause = new Intent();
-        pause.setAction("org.stuartresearch.radio91x.ACTION_PAUSE");
+        pause.setAction("org.stuartresearch.radio91x.ACTION_PLAY");
         PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, 0);
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_headset_black_18dp)
+        NotificationCompat.Builder mBuilder = null;
+        mBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.ic_music_note_black_18dp)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
-                .setStyle(new NotificationCompat.BigTextStyle())
-                .setContentTitle("91x")
-                .setContentText("Local. Independent. Radio.")
-                .addAction(R.drawable.ic_play_arrow_black_18dp, "PLAY", pausePending);
+                .setContentTitle(songText.getText())
+                .setContentText(artistText.getText())
+                .setColor(getResources().getColor(R.color.primary));
+
         Intent resultIntent = new Intent(this, MainActivity.class);
         resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
@@ -343,6 +354,13 @@ public class MainActivity extends ActionBarActivity {
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         Notification notification = mBuilder.build();
+        RemoteViews smallView = new RemoteViews(this.getPackageName(),
+                R.layout.mini_notification_layout);
+        smallView.setTextViewText(R.id.miniNotificationSongName, "91x");
+        smallView.setTextViewText(R.id.miniNotificationArtistName, "Local. Independent. Radio");
+        smallView.setImageViewResource(R.id.miniNotificationButton, R.drawable.ic_play_arrow_black_18dp);
+        smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
+        notification.contentView = smallView;
         notificationManager.notify(919191, notification);
     }
 
