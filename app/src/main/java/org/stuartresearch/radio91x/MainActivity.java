@@ -270,7 +270,8 @@ public class MainActivity extends ActionBarActivity {
                         cardAdapter = new CardAdapter(songStack, mainActivity, true);
                     }
                     recyclerView.setAdapter(cardAdapter);
-                    showToolbar();
+                    if (!showingSnackbar)
+                        showToolbar();
                     return true;
                 } else {
                     showFavs.setIcon(getDrawable(R.drawable.ic_favorite_red_24dp));
@@ -278,7 +279,8 @@ public class MainActivity extends ActionBarActivity {
                     cardAdapter = new CardAdapter(favoritesDataSource.getFavorites(),
                             mainActivity, false);
                     recyclerView.setAdapter(cardAdapter);
-                    showToolbar();
+                    if (!showingSnackbar)
+                        showToolbar();
                     return true;
                 }
             }

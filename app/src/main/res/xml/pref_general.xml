@@ -12,7 +12,7 @@
         android:summary="@string/openSource">
         <intent
         android:action="android.intent.action.VIEW"
-        android:data="https://www.github.com"/>
+        android:data="https://github.com/Stuart4/radio91x"/>
     </PreferenceScreen>
 
 </PreferenceScreen>
