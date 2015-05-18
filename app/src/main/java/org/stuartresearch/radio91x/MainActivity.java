@@ -155,7 +155,6 @@ public class MainActivity extends ActionBarActivity {
                 }
             }
         });
-        new AudioPlayerBroadcastReceiver(playPause);
         if (res != AudioManager.AUDIOFOCUS_REQUEST_FAILED)
             startParser();
         recyclerView = (RecyclerView) findViewById(R.id.cardList);
