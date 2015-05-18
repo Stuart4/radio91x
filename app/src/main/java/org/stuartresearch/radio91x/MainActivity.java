@@ -5,11 +5,13 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -26,7 +28,6 @@ import android.widget.ProgressBar;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 
-import com.balysv.materialripple.MaterialRippleLayout;
 import com.github.ksoichiro.android.observablescrollview.ObservableRecyclerView;
 import com.github.ksoichiro.android.observablescrollview.ObservableScrollViewCallbacks;
 import com.github.ksoichiro.android.observablescrollview.ScrollState;
@@ -59,6 +60,8 @@ public class MainActivity extends ActionBarActivity {
     private final MainActivity mainActivity = this;
     private final LinearLayoutManager lm = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL,
             false);
+    private SharedPreferences sharedPreferences;
+    private NotificationManager notificationManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +70,8 @@ public class MainActivity extends ActionBarActivity {
         playPause = (ImageView) findViewById(R.id.controlImageView);
         new AudioPlayerBroadcastReceiver(playPause);
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
             @Override
             public void onAudioFocusChange(int focusChange) {
@@ -212,6 +217,7 @@ public class MainActivity extends ActionBarActivity {
                     .duration(Snackbar.SnackbarDuration.LENGTH_SHORT)
                     .actionLabel(getResources().getString(R.string.close)));
         }
+        showNotification();
     }
 
     @Override
@@ -273,6 +279,15 @@ public class MainActivity extends ActionBarActivity {
             }
 
         });
+        MenuItem settings = (MenuItem) menu.findItem(R.id.action_settings);
+        settings.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+                startActivity(intent);
+                return true;
+            }
+        });
         return true;
     }
 
@@ -328,6 +343,7 @@ public class MainActivity extends ActionBarActivity {
         parser.songTitle = songInfo.songName;
         parser.artistName = songInfo.artistName;
         if (songInfo.trackId != -666) {
+            streamer.sound();
             CardAdapter.playingTopCard = true;
             songStack.add(songInfo);
             cardAdapter.notifyItemInserted(0);
@@ -335,6 +351,9 @@ public class MainActivity extends ActionBarActivity {
             if (lm.findFirstCompletelyVisibleItemPosition() == 0)
                 recyclerView.smoothScrollToPosition(0);
         } else {
+            if (sharedPreferences.getBoolean("muteAds", new Boolean(true))) {
+                streamer.noSound();
+            }
             CardAdapter.playingTopCard = false;
             cardAdapter.notifyItemChanged(0);
         }
@@ -357,9 +376,9 @@ public class MainActivity extends ActionBarActivity {
     private void showNotification() {
         Intent pause = new Intent();
         pause.setAction("org.stuartresearch.radio91x.ACTION_PAUSE");
-        PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause,
+        PendingIntent pausePending = PendingIntent.getBroadcast(this, 0, pause,
                 PendingIntent.FLAG_ONE_SHOT);
-        NotificationCompat.Builder mBuilder = null;
+        NotificationCompat.Builder mBuilder;
         mBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.ic_radio_white_24dp)
                 .setOngoing(true)
@@ -374,8 +393,6 @@ public class MainActivity extends ActionBarActivity {
         PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder.setContentIntent(resultPendingIntent);
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         Notification notification = mBuilder.build();
         RemoteViews smallView = new RemoteViews(this.getPackageName(),
                 R.layout.mini_notification_layout);
@@ -408,8 +425,6 @@ public class MainActivity extends ActionBarActivity {
         PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder.setContentIntent(resultPendingIntent);
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         Notification notification = mBuilder.build();
         RemoteViews smallView = new RemoteViews(this.getPackageName(),
                 R.layout.mini_notification_layout);
@@ -420,6 +435,42 @@ public class MainActivity extends ActionBarActivity {
         smallView.setImageViewResource(R.id.miniNotificationButton,
                 R.drawable.ic_play_arrow_black_24dp);
         smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
+        notification.contentView = smallView;
+        notification.priority = Notification.PRIORITY_HIGH;
+        notification.contentIntent = resultPendingIntent;
+        notificationManager.cancel(919191);
+        notificationManager.notify(919191, notification);
+    }
+
+    private void reopenNotification() {
+        Intent pause = new Intent();
+        pause.setAction("org.stuartresearch.radio91x.ACTION_PLAY");
+        PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, 0);
+        NotificationCompat.Builder mBuilder = null;
+        mBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.ic_radio_white_24dp)
+                .setVisibility(Notification.VISIBILITY_PUBLIC)
+                .setContentTitle(songText.getText())
+                .setContentText(artistText.getText())
+                .setColor(getResources().getColor(R.color.primary));
+
+        Intent resultIntent = new Intent(this, MainActivity.class);
+        resultIntent.setAction(Intent.ACTION_MAIN);
+        resultIntent.addCategory(Intent.CATEGORY_HOME);
+        PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+        mBuilder.setContentIntent(resultPendingIntent);
+        Notification notification = mBuilder.build();
+        RemoteViews smallView = new RemoteViews(this.getPackageName(),
+                R.layout.mini_notification_layout);
+        smallView.setTextViewText(R.id.miniNotificationSongName,
+                getResources().getString(R.string.stationName));
+        smallView.setTextViewText(R.id.miniNotificationArtistName,
+                getResources().getString(R.string.LIR));
+        smallView.setImageViewResource(R.id.miniNotificationButton,
+                R.drawable.ic_play_arrow_black_24dp);
+        smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
+        smallView.setViewVisibility(R.id.miniNotificationButton, View.GONE);
         notification.contentView = smallView;
         notification.priority = Notification.PRIORITY_HIGH;
         notification.contentIntent = resultPendingIntent;
@@ -439,8 +490,13 @@ public class MainActivity extends ActionBarActivity {
     }
 
     @Override
-    protected void onNewIntent(Intent intent) {
+    protected void onStop() {
+        super.onStop();
+        reopenNotification();
+    }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
     }
 
     void showToolbar() {

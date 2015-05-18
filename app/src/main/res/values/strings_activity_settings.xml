@@ -1,0 +1,14 @@
+<resources>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">General</string>
+
+    <string name="muteAdsTitle">Mute Advertisements</string>
+    <string name="muteAdsSummary">EXPERIMENTAL: This will break when content is out of sync and
+        during programming other than music.</string>
+    <string name="openSource">This application is open sourced.\n
+        Click to visit the Github.</string>
+</resources>

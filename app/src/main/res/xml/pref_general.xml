@@ -1,0 +1,18 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <CheckBoxPreference
+        android:key="muteAds"
+        android:title="@string/muteAdsTitle"
+        android:summary="@string/muteAdsSummary"
+        android:defaultValue="false" />
+
+    <!-- NOTE: EditTextPreference accepts EditText attributes. -->
+    <!-- NOTE: EditTextPreference's summary should be set to its value by the activity code. -->
+    <PreferenceScreen
+        android:summary="@string/openSource">
+        <intent
+        android:action="android.intent.action.VIEW"
+        android:data="https://www.github.com"/>
+    </PreferenceScreen>
+
+</PreferenceScreen>
