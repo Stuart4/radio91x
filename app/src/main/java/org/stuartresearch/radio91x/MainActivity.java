@@ -155,6 +155,10 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 if (v.getTag().equals("play")) {
+                    if (!streamer.isPlaying()) {
+                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                        return;
+                    }
                     streamer.stop();
                     stopParser();
                     songText.setText(getResources().getString(R.string.stationName));
@@ -218,6 +222,7 @@ public class MainActivity extends ActionBarActivity {
                     .actionLabel(getResources().getString(R.string.close)));
         }
         showNotification();
+        startService(new Intent(this, RadioService.class));
     }
 
     @Override
@@ -376,41 +381,40 @@ public class MainActivity extends ActionBarActivity {
     private void showNotification() {
         Intent pause = new Intent();
         pause.setAction("org.stuartresearch.radio91x.ACTION_PAUSE");
-        PendingIntent pausePending = PendingIntent.getBroadcast(this, 0, pause,
-                PendingIntent.FLAG_ONE_SHOT);
-        NotificationCompat.Builder mBuilder;
+        PendingIntent pausePending = PendingIntent.getBroadcast(this, 0, pause, 0);
+        NotificationCompat.Builder mBuilder = null;
         mBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.ic_radio_white_24dp)
-                .setOngoing(true)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setContentTitle(songText.getText())
                 .setContentText(artistText.getText())
                 .setColor(getResources().getColor(R.color.primary));
 
-        Intent resultIntent = new Intent(this, MainActivity.class);
-        resultIntent.setAction(Intent.ACTION_MAIN);
-        resultIntent.addCategory(Intent.CATEGORY_HOME);
-        PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent,
+        Intent reopenIntent = new Intent(this, MainActivity.class);
+        reopenIntent.setAction(Intent.ACTION_MAIN);
+        reopenIntent.addCategory(Intent.CATEGORY_HOME);
+        PendingIntent reopenPending = PendingIntent.getActivity(this, 0, reopenIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
-        mBuilder.setContentIntent(resultPendingIntent);
+        mBuilder.setContentIntent(reopenPending);
         Notification notification = mBuilder.build();
         RemoteViews smallView = new RemoteViews(this.getPackageName(),
                 R.layout.mini_notification_layout);
         smallView.setTextViewText(R.id.miniNotificationSongName, songText.getText());
         smallView.setTextViewText(R.id.miniNotificationArtistName, artistText.getText());
-        smallView.setImageViewResource(R.id.miniNotificationButton, R.drawable.ic_pause_black_24dp);
+        smallView.setImageViewResource(R.id.miniNotificationButton,
+                R.drawable.ic_pause_black_24dp);
         smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
         notification.contentView = smallView;
-        notification.priority = Notification.PRIORITY_MAX;
-        notification.contentIntent = resultPendingIntent;
+        notification.priority = Notification.PRIORITY_HIGH;
+        notification.contentIntent = reopenPending;
         notificationManager.cancel(919191);
         notificationManager.notify(919191, notification);
     }
 
     private void hideNotification() {
-        Intent pause = new Intent();
-        pause.setAction("org.stuartresearch.radio91x.ACTION_PLAY");
-        PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, 0);
+        Intent play = new Intent();
+        play.setAction("org.stuartresearch.radio91x.ACTION_PLAY");
+        PendingIntent playPending = PendingIntent.getBroadcast (this, 0, play, 0);
         NotificationCompat.Builder mBuilder = null;
         mBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.ic_radio_white_24dp)
@@ -419,12 +423,12 @@ public class MainActivity extends ActionBarActivity {
                 .setContentText(artistText.getText())
                 .setColor(getResources().getColor(R.color.primary));
 
-        Intent resultIntent = new Intent(this, MainActivity.class);
-        resultIntent.setAction(Intent.ACTION_MAIN);
-        resultIntent.addCategory(Intent.CATEGORY_HOME);
-        PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent,
+        Intent reopenIntent = new Intent(this, MainActivity.class);
+        reopenIntent.setAction(Intent.ACTION_MAIN);
+        reopenIntent.addCategory(Intent.CATEGORY_HOME);
+        PendingIntent reopenPending = PendingIntent.getActivity(this, 0, reopenIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
-        mBuilder.setContentIntent(resultPendingIntent);
+        mBuilder.setContentIntent(reopenPending);
         Notification notification = mBuilder.build();
         RemoteViews smallView = new RemoteViews(this.getPackageName(),
                 R.layout.mini_notification_layout);
@@ -434,49 +438,14 @@ public class MainActivity extends ActionBarActivity {
                 getResources().getString(R.string.LIR));
         smallView.setImageViewResource(R.id.miniNotificationButton,
                 R.drawable.ic_play_arrow_black_24dp);
-        smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
+        smallView.setOnClickPendingIntent(R.id.miniNotificationButton, playPending);
         notification.contentView = smallView;
         notification.priority = Notification.PRIORITY_HIGH;
-        notification.contentIntent = resultPendingIntent;
+        notification.contentIntent = reopenPending;
         notificationManager.cancel(919191);
         notificationManager.notify(919191, notification);
     }
 
-    private void reopenNotification() {
-        Intent pause = new Intent();
-        pause.setAction("org.stuartresearch.radio91x.ACTION_PLAY");
-        PendingIntent pausePending = PendingIntent.getBroadcast (this, 0, pause, 0);
-        NotificationCompat.Builder mBuilder = null;
-        mBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_radio_white_24dp)
-                .setVisibility(Notification.VISIBILITY_PUBLIC)
-                .setContentTitle(songText.getText())
-                .setContentText(artistText.getText())
-                .setColor(getResources().getColor(R.color.primary));
-
-        Intent resultIntent = new Intent(this, MainActivity.class);
-        resultIntent.setAction(Intent.ACTION_MAIN);
-        resultIntent.addCategory(Intent.CATEGORY_HOME);
-        PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-        mBuilder.setContentIntent(resultPendingIntent);
-        Notification notification = mBuilder.build();
-        RemoteViews smallView = new RemoteViews(this.getPackageName(),
-                R.layout.mini_notification_layout);
-        smallView.setTextViewText(R.id.miniNotificationSongName,
-                getResources().getString(R.string.stationName));
-        smallView.setTextViewText(R.id.miniNotificationArtistName,
-                getResources().getString(R.string.LIR));
-        smallView.setImageViewResource(R.id.miniNotificationButton,
-                R.drawable.ic_play_arrow_black_24dp);
-        smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
-        smallView.setViewVisibility(R.id.miniNotificationButton, View.GONE);
-        notification.contentView = smallView;
-        notification.priority = Notification.PRIORITY_HIGH;
-        notification.contentIntent = resultPendingIntent;
-        notificationManager.cancel(919191);
-        notificationManager.notify(919191, notification);
-    }
 
 
     @Override
@@ -492,7 +461,6 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        reopenNotification();
     }
 
     @Override

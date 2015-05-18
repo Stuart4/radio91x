@@ -55,14 +55,18 @@ class Streamer {
                         prepared = true;
                         mp.start();
                         playing = true;
-                        progressBar.setIndeterminate(false);
-                        progressBar.setVisibility(View.GONE);
+                        if (progressBar != null) {
+                            progressBar.setIndeterminate(false);
+                            progressBar.setVisibility(View.GONE);
+                        }
                     }
                 });
                 mediaPlayer.setOnErrorListener(onErrorListener);
                 mediaPlayer.prepareAsync();
-                progressBar.setIndeterminate(true);
-                progressBar.setVisibility(View.VISIBLE);
+                if (progressBar != null) {
+                    progressBar.setIndeterminate(true);
+                    progressBar.setVisibility(View.VISIBLE);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -87,8 +91,10 @@ class Streamer {
         mediaPlayer.reset();
         prepared = false;
         playing = false;
-        progressBar.setVisibility(View.GONE);
-        progressBar.setIndeterminate(false);
+        if (progressBar != null) {
+            progressBar.setVisibility(View.GONE);
+            progressBar.setIndeterminate(false);
+        }
     }
 
     public boolean isPlaying() {
