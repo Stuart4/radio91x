@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.balysv.materialripple.MaterialRippleLayout;
 import com.nispok.snackbar.Snackbar;
 import com.nispok.snackbar.SnackbarManager;
 import com.nispok.snackbar.enums.SnackbarType;
@@ -27,15 +28,15 @@ import java.util.Vector;
  * Created by jake on 5/13/15.
  */
 public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder> {
-    private Vector<SongInfo> songInfoStack;
-    Context context;
+    private final Vector<SongInfo> songInfoStack;
+    private final Context context;
     private static FavoritesDataSource dataSource;
     static boolean playingTopCard = false;
 
     public CardAdapter(Vector<SongInfo> stack, Context context, boolean playingTopCard) {
         songInfoStack = stack;
         this.context = context;
-        this.playingTopCard = playingTopCard;
+        CardAdapter.playingTopCard = playingTopCard;
     }
 
     public static void setDataSource(FavoritesDataSource newDataSource) {
@@ -44,7 +45,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
     @Override
     public int getItemCount() {
-       return songInfoStack.size();
+        return songInfoStack.size();
     }
 
     @Override
@@ -98,23 +99,24 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
     }
 
     public static class SongInfoHolder extends RecyclerView.ViewHolder {
-        protected TextView songText;
-        protected TextView artistText;
-        protected ImageView albumImage;
-        protected View background;
-        protected ImageView equalizer;
-        protected ImageView buySong;
-        protected ImageView previewSong;
-        protected ImageView favoriteSong;
+        TextView songText;
+        TextView artistText;
+        ImageView albumImage;
+        View background;
+        ImageView equalizer;
+        ImageView buySong;
+        ImageView previewSong;
+        ImageView favoriteSong;
 
-        Context context;
+        final Context context;
+
         public SongInfoHolder(View v) {
             super(v);
             songText = (TextView) v.findViewById(R.id.songNameTextView);
             artistText = (TextView) v.findViewById(R.id.artistNameTextView);
             albumImage = (ImageView) v.findViewById(R.id.albumImageView);
             context = v.getContext();
-            background = (View) v.findViewById(R.id.playingBackground);
+            background = v.findViewById(R.id.playingBackground);
             equalizer = (ImageView) v.findViewById(R.id.playingEqualizer);
             buySong = (ImageView) v.findViewById(R.id.buySongButton);
             previewSong = (ImageView) v.findViewById(R.id.previewSongButton);
@@ -122,14 +124,16 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
         }
     }
+
     public static class AlbumTransformation implements Transformation {
-        ImageView albumImage;
+        final ImageView albumImage;
 
         public AlbumTransformation(ImageView iv) {
             albumImage = iv;
         }
 
-        @Override public Bitmap transform(Bitmap source) {
+        @Override
+        public Bitmap transform(Bitmap source) {
             int x = 0;
             int y = (source.getHeight() - albumImage.getHeight()) / 2;
             Bitmap result;
@@ -146,12 +150,15 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
             return result;
         }
 
-        @Override public String key() { return "square()"; }
+        @Override
+        public String key() {
+            return "square()";
+        }
     }
 
 
     class CardClickListenerBuy implements View.OnClickListener {
-        int i;
+        final int i;
 
         public CardClickListenerBuy(int i) {
             this.i = i;
@@ -165,8 +172,9 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
             context.startActivity(intent);
         }
     }
+
     class CardClickListenerPreview implements View.OnClickListener {
-        int i;
+        final int i;
 
         public CardClickListenerPreview(int i) {
             this.i = i;
@@ -245,7 +253,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
                         }
                     }));
-            ((MainActivity) context). streamer.noSound();
+            ((MainActivity) context).streamer.noSound();
             try {
                 sample.setDataSource(context, Uri.parse(songInfoStack.get(i).songSample));
                 sample.prepareAsync();
@@ -260,7 +268,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                     public void onCompletion(MediaPlayer mp) {
                         sample.release();
                         ((MainActivity) context).streamer.sound();
-                        ((MainActivity) context).playingElsewhere = false;
+                        MainActivity.playingElsewhere = false;
                         SnackbarManager.dismiss();
                     }
                 });
@@ -269,7 +277,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                     public boolean onError(MediaPlayer mp, int what, int extra) {
                         sample.release();
                         ((MainActivity) context).streamer.sound();
-                        ((MainActivity) context).playingElsewhere = false;
+                        MainActivity.playingElsewhere = false;
                         SnackbarManager.dismiss();
                         return false;
                     }
@@ -279,8 +287,9 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
             }
         }
     }
+
     class CardClickListenerFavorite implements View.OnClickListener {
-        int i;
+        final int i;
 
         public CardClickListenerFavorite(int i) {
             this.i = i;
@@ -294,19 +303,19 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
             if (songInfo.favorite) {
                 favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_24dp);
                 songInfo.favorite = false;
-                snackString = String.format("Removed %s by %s to your favorites.", songInfo.songName, songInfo.artistName);
+                snackString = String.format(context.getResources().getString(R.string.favoriteSaved), songInfo.songName, songInfo.artistName);
                 dataSource.unfavorite(songInfo);
             } else {
                 favoriteSong.setImageResource(R.drawable.ic_favorite_red_24dp);
                 songInfo.favorite = true;
-                snackString = String.format("Saved %s by %s to your favorites.", songInfo.songName, songInfo.artistName);
+                snackString = String.format(context.getResources().getString(R.string.favoriteSaved), songInfo.songName, songInfo.artistName);
                 dataSource.favorite(songInfo);
             }
             SnackbarManager.show(Snackbar.with(context).text(snackString)
                     .actionColor(context.getResources().getColor(R.color.accent))
                     .color(context.getResources().getColor(R.color.primary))
                     .duration(Snackbar.SnackbarDuration.LENGTH_SHORT)
-                    .actionLabel("UNDO")
+                    .actionLabel(context.getResources().getString(R.string.undo))
                     .type(SnackbarType.MULTI_LINE)
                     .actionListener(new ActionClickListener() {
                         @Override
@@ -322,39 +331,39 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                             }
                         }
                     })
-            .eventListener(new EventListener() {
-                @Override
-                public void onShow(Snackbar snackbar) {
-                    ((MainActivity) context).hideToolbar();
-                    ((MainActivity) context).showingSnackbar = true;
-                }
+                    .eventListener(new EventListener() {
+                        @Override
+                        public void onShow(Snackbar snackbar) {
+                            ((MainActivity) context).hideToolbar();
+                            ((MainActivity) context).showingSnackbar = true;
+                        }
 
-                @Override
-                public void onShowByReplace(Snackbar snackbar) {
+                        @Override
+                        public void onShowByReplace(Snackbar snackbar) {
 
-                }
+                        }
 
-                @Override
-                public void onShown(Snackbar snackbar) {
+                        @Override
+                        public void onShown(Snackbar snackbar) {
 
-                }
+                        }
 
-                @Override
-                public void onDismiss(Snackbar snackbar) {
-                    ((MainActivity) context).showToolbar();
-                    ((MainActivity) context).showingSnackbar = false;
-                }
+                        @Override
+                        public void onDismiss(Snackbar snackbar) {
+                            ((MainActivity) context).showToolbar();
+                            ((MainActivity) context).showingSnackbar = false;
+                        }
 
-                @Override
-                public void onDismissByReplace(Snackbar snackbar) {
+                        @Override
+                        public void onDismissByReplace(Snackbar snackbar) {
 
-                }
+                        }
 
-                @Override
-                public void onDismissed(Snackbar snackbar) {
+                        @Override
+                        public void onDismissed(Snackbar snackbar) {
 
-                }
-            }));
+                        }
+                    }));
         }
     }
 

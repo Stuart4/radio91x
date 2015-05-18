@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 /**
  * Created by jake on 5/16/15.
  */
-public class FavoritesSqliteHelper extends SQLiteOpenHelper{
+class FavoritesSqliteHelper extends SQLiteOpenHelper {
     public static final String COLUMN_ID = "trackId";
     public static final String COLUMN_SONGNAME = "songName";
     public static final String COLUMN_ARTISTNAME = "artistName";
@@ -16,13 +16,13 @@ public class FavoritesSqliteHelper extends SQLiteOpenHelper{
     public static final String COLUMN_PREVIEWURL = "previewUrl";
     public static final String TABLE_NAME = "favs";
 
-    public static final String DATABASE_NAME = "favorites.db";
+    private static final String DATABASE_NAME = "favorites.db";
     private static final int DATABASE_VERSION = 1;
 
     private static final String DATABASE_CREATE = String.format("CREATE TABLE %s (`%s` long," +
-            " `%s` varchar(50), `%s` varchar(50), `%s` varchar(500)," +
-            " `%s` varchar(500), `%s` varchar(500))", TABLE_NAME, COLUMN_ID, COLUMN_SONGNAME,
-            COLUMN_ARTISTNAME, COLUMN_IMAGEURL, COLUMN_BUYURL, COLUMN_PREVIEWURL);
+                    " `%s` varchar(50), `%s` varchar(50), `%s` varchar(500)," +
+                    " `%s` varchar(500), `%s` varchar(500))", TABLE_NAME, COLUMN_ID,
+            COLUMN_SONGNAME, COLUMN_ARTISTNAME, COLUMN_IMAGEURL, COLUMN_BUYURL, COLUMN_PREVIEWURL);
 
     public FavoritesSqliteHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);

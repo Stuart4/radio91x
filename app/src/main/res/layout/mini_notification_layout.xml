@@ -8,7 +8,7 @@
         android:id="@+id/miniNotificationImageView"
         android:padding="10dp"
         android:layout_gravity="center_vertical"
-        android:src="@drawable/x91"
+        android:src="@mipmap/ic_launcher"
         android:layout_weight="1"
         android:layout_height="match_parent" />
     <LinearLayout
@@ -27,7 +27,7 @@
             android:focusable="true"
             android:id="@+id/miniNotificationSongName"
             android:focusableInTouchMode="true"
-            android:text="Little Sister"/>
+            android:text=""/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -38,13 +38,14 @@
             android:focusable="true"
             android:id="@+id/miniNotificationArtistName"
             android:focusableInTouchMode="true"
-            android:text="Queens of the Stone Age"/>
+            android:text=""/>
     </LinearLayout>
 
     <ImageButton
         android:layout_width="0px"
         android:layout_height="match_parent"
         style="@style/NotificationButton"
+        android:contentDescription="@string/playPause"
         android:padding="10dp"
         android:layout_weight="1"
         android:id="@+id/miniNotificationButton"

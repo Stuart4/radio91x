@@ -12,19 +12,19 @@ import java.util.Vector;
 /**
  * Created by jake on 5/16/15.
  */
-public class FavoritesDataSource {
+class FavoritesDataSource {
     private SQLiteDatabase db;
-    private FavoritesSqliteHelper dbHelper;
-    private String[] allColumns = {FavoritesSqliteHelper.COLUMN_ID,
+    final private FavoritesSqliteHelper dbHelper;
+    /*private String[] allColumns = {FavoritesSqliteHelper.COLUMN_ID,
             FavoritesSqliteHelper.COLUMN_SONGNAME, FavoritesSqliteHelper.COLUMN_ARTISTNAME,
             FavoritesSqliteHelper.COLUMN_IMAGEURL, FavoritesSqliteHelper.COLUMN_BUYURL,
-            FavoritesSqliteHelper.COLUMN_PREVIEWURL};
+            FavoritesSqliteHelper.COLUMN_PREVIEWURL};*/
 
     public FavoritesDataSource(Context context) {
         dbHelper = new FavoritesSqliteHelper(context);
     }
 
-    public void open() throws SQLException {
+    public void open() {
         db = dbHelper.getWritableDatabase();
     }
 
@@ -76,10 +76,11 @@ public class FavoritesDataSource {
             cursor.move(i);
             songInfos[i].favorite = true;
         }
+        cursor.close();
         return new Vector<>(Arrays.asList(songInfos));
     }
 
-    public boolean isFavorite (SongInfo songInfo) {
+    public boolean isFavorite(SongInfo songInfo) {
         return db.rawQuery("SELECT * FROM " + FavoritesSqliteHelper.TABLE_NAME
                 + " WHERE " + FavoritesSqliteHelper.COLUMN_ID + " = " + songInfo.trackId, null)
                 .getCount() > 0;

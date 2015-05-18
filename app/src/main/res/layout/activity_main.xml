@@ -26,10 +26,7 @@
         android:elevation="50dp"
         android:background="@color/accent"
         android:layout_height="wrap_content">
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -58,9 +55,7 @@
                         android:scrollHorizontally="true"
                         android:marqueeRepeatLimit="marquee_forever"
                         android:textStyle="bold"
-                        android:text="91x"
-                        android:layout_alignRight="@id/albumImageView"
-                        android:layout_alignParentTop="true"
+                        android:text="@string/stationName"
                         android:textColor="@color/primary_text" />
                     <TextView
 
@@ -73,10 +68,8 @@
                         android:focusableInTouchMode="true"
                         android:scrollHorizontally="true"
                         android:marqueeRepeatLimit="marquee_forever"
-                        android:text="Local. Independent. Radio."
-                        android:textColor="@color/primary_text"
-                        android:layout_alignParentTop="true"
-                        android:layout_centerHorizontal="true" />
+                        android:text="@string/LIR"
+                        android:textColor="@color/primary_text" />
                 </LinearLayout>
                 <ImageView
                     android:layout_width="wrap_content"
@@ -84,11 +77,10 @@
                     android:id="@+id/controlImageView"
                     android:paddingRight="10dp"
                     android:layout_gravity="center_vertical"
-                    android:layout_alignParentRight="true"
                     android:layout_weight="0"
-                    android:src="@drawable/ic_pause_circle_outline_black_36dp"/>
+                    android:src="@drawable/ic_pause_circle_outline_black_36dp"
+                    tools:ignore="RtlSymmetry" />
             </LinearLayout>
-        </LinearLayout>
 
     </android.support.v7.widget.Toolbar>
 

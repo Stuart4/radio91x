@@ -10,7 +10,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,10 +20,10 @@ import java.net.URL;
 /**
  * Created by jake on 5/13/15.
  */
-public class Parser extends AsyncTask<Void, Void, SongInfo> {
+class Parser extends AsyncTask<Void, Void, SongInfo> {
     boolean running = true;
 
-    MainActivity main;
+    private final MainActivity main;
     String songTitle = new String();
     String artistName = new String();
 
@@ -50,7 +49,7 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
                         SongInfo songInfo = new SongInfo();
                         if (songTitle.isEmpty() && artistName.isEmpty()) {
                             songInfo.trackId = -666;
-                            songInfo.songName = "Advertisement";
+                            songInfo.songName = main.getString(R.string.advertisement);
                             return songInfo;
                         }
                         DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
@@ -74,6 +73,11 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
                             }
                             json = json.substring(0, json.length() - 2);
                             JSONObject jsonObject = new JSONObject(json);
+                            if (jsonObject.getInt("resultCount") == 0) {
+                                songInfo.songName = songTitle;
+                                songInfo.artistName = artistName;
+                                return songInfo;
+                            }
                             JSONArray jsonArray = jsonObject.getJSONArray("results");
                             jsonObject = jsonArray.getJSONObject(0);
                             try {
@@ -108,7 +112,9 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
                                 e.printStackTrace();
                             }
                             return songInfo;
-                        } catch (Exception e) {e.printStackTrace();}
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             } catch (IOException e) {
@@ -116,7 +122,7 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
             }
             try {
                 Thread.sleep(30000);
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException dropIt) {}
         }
         return null;
     }
@@ -132,7 +138,7 @@ public class Parser extends AsyncTask<Void, Void, SongInfo> {
     }
 }
 
-class SongInfo implements Serializable{
+class SongInfo implements Serializable {
     String songName = new String();
     String artistName = new String();
     String imageUrl = new String();

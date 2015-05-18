@@ -19,16 +19,15 @@ public class ParsingHeaderData {
         public String title = "";
     }
 
-    protected URL streamUrl;
+    private URL streamUrl;
     private Map<String, String> metadata;
-    private TrackData trackData;
 
     public ParsingHeaderData() {
 
     }
 
     public TrackData getTrackDetails(URL streamUrl) {
-        trackData = new TrackData();
+        TrackData trackData = new TrackData();
         setStreamUrl(streamUrl);
         String strTitle = "";
         String strArtist = "";
@@ -60,13 +59,11 @@ public class ParsingHeaderData {
         return trackData;
     }
 
-    private URLConnection con;
     private InputStream stream;
-    private List<String> headerList;
 
     private Map<String, String> executeToFetchData() throws IOException {
         try {
-            con = streamUrl.openConnection();
+            URLConnection con = streamUrl.openConnection();
 
             con.setRequestProperty("Icy-MetaData", "1");
             // con.setRequestProperty("Connection", "close");
@@ -78,7 +75,7 @@ public class ParsingHeaderData {
             stream = con.getInputStream();
 
             if (headers.containsKey("icy-metaint")) {
-                headerList = headers.get("icy-metaint");
+                List<String> headerList = headers.get("icy-metaint");
                 if (headerList != null) {
                     if (headerList.size() > 0) {
                         metaDataOffset = Integer.parseInt(headers.get(
@@ -109,12 +106,8 @@ public class ParsingHeaderData {
                 if (count == metaDataOffset + 1) {
                     metaDataLength = b * 16;
                 }
-                if (count > metaDataOffset + 1
-                        && count < (metaDataOffset + metaDataLength)) {
-                    inData = true;
-                } else {
-                    inData = false;
-                }
+                inData = count > metaDataOffset + 1
+                        && count < (metaDataOffset + metaDataLength);
                 if (inData) {
                     if (b != 0) {
                         metaData.append((char) b);
@@ -138,25 +131,22 @@ public class ParsingHeaderData {
 
     }
 
-    public URL getStreamUrl() {
-        return streamUrl;
-    }
 
-    public void setStreamUrl(URL streamUrl) {
+    private void setStreamUrl(URL streamUrl) {
         this.metadata = null;
         this.streamUrl = streamUrl;
     }
 
-    public static Map<String, String> parsingMetadata(String metaString) {
+    private static Map<String, String> parsingMetadata(String metaString) {
         @SuppressWarnings({ "rawtypes", "unchecked" })
         Map<String, String> metadata = new HashMap();
         String[] metaParts = metaString.split(";");
-        Pattern p = Pattern.compile("^([a-zA-Z]+)=\\'([^\\']*)\\'$");
+        Pattern p = Pattern.compile("^([a-zA-Z]+)=\'([^\']*)\'$");
         Matcher m;
         for (int i = 0; i < metaParts.length; i++) {
             m = p.matcher(metaParts[i]);
             if (m.find()) {
-                metadata.put((String) m.group(1), (String) m.group(2));
+                metadata.put(m.group(1), m.group(2));
             }
         }
 

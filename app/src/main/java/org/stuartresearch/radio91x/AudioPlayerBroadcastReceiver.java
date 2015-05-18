@@ -9,9 +9,7 @@ import android.widget.ImageView;
  * Created by jake on 5/15/15.
  */
 public class AudioPlayerBroadcastReceiver extends BroadcastReceiver {
-    static ImageView playPause;
-
-    public AudioPlayerBroadcastReceiver() {}
+    private static ImageView playPause;
 
     public AudioPlayerBroadcastReceiver(ImageView image) {
         playPause = image;
@@ -22,7 +20,7 @@ public class AudioPlayerBroadcastReceiver extends BroadcastReceiver {
 
         String action = intent.getAction();
 
-        if(action.equals("org.stuartresearch.radio91x.ACTION_PLAY")) {
+        if (action.equals("org.stuartresearch.radio91x.ACTION_PLAY")) {
             playPause.callOnClick();
         } else if (action.equals("org.stuartresearch.radio91x.ACTION_PAUSE")) {
             playPause.callOnClick();
