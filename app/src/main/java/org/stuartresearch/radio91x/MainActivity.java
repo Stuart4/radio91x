@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -30,6 +31,8 @@ import com.github.ksoichiro.android.observablescrollview.ObservableScrollViewCal
 import com.github.ksoichiro.android.observablescrollview.ScrollState;
 import com.nispok.snackbar.Snackbar;
 import com.nispok.snackbar.SnackbarManager;
+import com.nispok.snackbar.listeners.ActionClickListener;
+import com.nispok.snackbar.listeners.EventListener;
 import com.squareup.picasso.Picasso;
 
 import java.util.Vector;
@@ -75,9 +78,62 @@ public class MainActivity extends ActionBarActivity {
                 }
             }
         };
+        final ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
         int res = audioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-        streamer = new Streamer(getApplicationContext(),
-                (ProgressBar) findViewById(R.id.progressBar), playPause);
+        final MainActivity mainActivity = this;
+        streamer = new Streamer(getApplicationContext(), progressBar, new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mp, int what, int extra) {
+                if (extra == MediaPlayer.MEDIA_ERROR_IO || what == MediaPlayer.MEDIA_ERROR_UNKNOWN) {
+                    streamer.stop();
+                    playPause.setImageResource(R.drawable.ic_play_circle_outline_black_36dp);
+                    hideToolbar();
+                    SnackbarManager.show(Snackbar.with(mainActivity).duration(Snackbar.SnackbarDuration.LENGTH_INDEFINITE).actionLabel("RETRY").text("Connection Issues").color(getResources().getColor(R.color.primary)).actionColor(getResources().getColor(R.color.accent)).actionListener(new ActionClickListener() {
+                        @Override
+                        public void onActionClicked(Snackbar snackbar) {
+                            streamer.preparing = false;
+                            streamer.play();
+                            progressBar.setIndeterminate(true);
+                            progressBar.setVisibility(View.VISIBLE);
+                            playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_36dp);
+                        }
+                    }).eventListener(new EventListener() {
+                        @Override
+                        public void onShow(Snackbar snackbar) {
+                            progressBar.setIndeterminate(false);
+                            progressBar.setVisibility(View.GONE);
+                        }
+
+                        @Override
+                        public void onShowByReplace(Snackbar snackbar) {
+
+                        }
+
+                        @Override
+                        public void onShown(Snackbar snackbar) {
+
+                        }
+
+                        @Override
+                        public void onDismiss(Snackbar snackbar) {
+                            showToolbar();
+                        }
+
+                        @Override
+                        public void onDismissByReplace(Snackbar snackbar) {
+
+                        }
+
+                        @Override
+                        public void onDismissed(Snackbar snackbar) {
+
+                        }
+                    }));
+                    return true;
+                }
+                return false;
+            }
+        });
         if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) streamer.stop();
         albumView = (ImageView) findViewById(R.id.albumImageView);
         songText = (TextView) findViewById(R.id.songNameTextView);
@@ -106,7 +162,6 @@ public class MainActivity extends ActionBarActivity {
             startParser();
         recyclerView = (RecyclerView) findViewById(R.id.cardList);
         recyclerView.setHasFixedSize(true);
-        recyclerView.setHasTransientState(false);
         recyclerView.setLayoutManager(lm);
         cardAdapter = new CardAdapter(songStack, this, false);
         recyclerView.setAdapter(cardAdapter);

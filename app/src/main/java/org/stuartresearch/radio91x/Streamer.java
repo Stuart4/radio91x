@@ -5,9 +5,17 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+
+import com.nispok.snackbar.Snackbar;
+import com.nispok.snackbar.SnackbarManager;
+import com.nispok.snackbar.listeners.ActionClickListener;
+import com.nispok.snackbar.listeners.EventListener;
 
 import java.io.IOException;
 
@@ -19,15 +27,17 @@ public class Streamer {
     private MediaPlayer mediaPlayer;
     private boolean playing = false;
     private boolean prepared = false;
-    private boolean preparing = false;
+    protected boolean preparing = false;
     private ProgressBar progressBar;
     private ImageView playPause;
     Context context;
+    MainActivity mainActivity;
+    MediaPlayer.OnErrorListener onErrorListener;
 
-    public Streamer(Context context, final ProgressBar progressBar, final ImageView playPause) {
+    public Streamer(Context context, final ProgressBar progressBar, MediaPlayer.OnErrorListener onErrorListener) {
         this.progressBar = progressBar;
-        this.playPause = playPause;
         this.context = context;
+        this.onErrorListener = onErrorListener;
         Uri.Builder uBuilder = new Uri.Builder();
         uBuilder.scheme("http")
                 .authority("playerservices.streamtheworld.com")
@@ -60,6 +70,7 @@ public class Streamer {
                         progressBar.setVisibility(View.GONE);
                     }
                 });
+                mediaPlayer.setOnErrorListener(onErrorListener);
                 mediaPlayer.prepareAsync();
                 preparing = true;
                 progressBar.setIndeterminate(true);

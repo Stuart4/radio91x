@@ -15,6 +15,7 @@ import android.widget.TextView;
 
 import com.nispok.snackbar.Snackbar;
 import com.nispok.snackbar.SnackbarManager;
+import com.nispok.snackbar.enums.SnackbarType;
 import com.nispok.snackbar.listeners.ActionClickListener;
 import com.nispok.snackbar.listeners.EventListener;
 import com.squareup.picasso.Picasso;
@@ -202,6 +203,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                     .actionColor(context.getResources().getColor(R.color.accent))
                     .color(context.getResources().getColor(R.color.primary))
                     .duration(Snackbar.SnackbarDuration.LENGTH_INDEFINITE)
+                    .type(SnackbarType.MULTI_LINE)
                     .actionLabel("STOP")
                     .actionListener(new ActionClickListener() {
                         @Override
@@ -210,39 +212,39 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                             ((MainActivity) context).streamer.sound();
                         }
                     })
-            .eventListener(new EventListener() {
-                @Override
-                public void onShow(Snackbar snackbar) {
-                    ((MainActivity) context).hideToolbar();
-                    ((MainActivity) context).showingSnackbar = true;
-                }
+                    .eventListener(new EventListener() {
+                        @Override
+                        public void onShow(Snackbar snackbar) {
+                            ((MainActivity) context).hideToolbar();
+                            ((MainActivity) context).showingSnackbar = true;
+                        }
 
-                @Override
-                public void onShowByReplace(Snackbar snackbar) {
+                        @Override
+                        public void onShowByReplace(Snackbar snackbar) {
 
-                }
+                        }
 
-                @Override
-                public void onShown(Snackbar snackbar) {
+                        @Override
+                        public void onShown(Snackbar snackbar) {
 
-                }
+                        }
 
-                @Override
-                public void onDismiss(Snackbar snackbar) {
-                    ((MainActivity) context).showToolbar();
-                    ((MainActivity) context).showingSnackbar = false;
-                }
+                        @Override
+                        public void onDismiss(Snackbar snackbar) {
+                            ((MainActivity) context).showToolbar();
+                            ((MainActivity) context).showingSnackbar = false;
+                        }
 
-                @Override
-                public void onDismissByReplace(Snackbar snackbar) {
+                        @Override
+                        public void onDismissByReplace(Snackbar snackbar) {
 
-                }
+                        }
 
-                @Override
-                public void onDismissed(Snackbar snackbar) {
+                        @Override
+                        public void onDismissed(Snackbar snackbar) {
 
-                }
-            }));
+                        }
+                    }));
             ((MainActivity) context). streamer.noSound();
             try {
                 sample.setDataSource(context, Uri.parse(songInfoStack.get(i).songSample));
@@ -305,6 +307,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                     .color(context.getResources().getColor(R.color.primary))
                     .duration(Snackbar.SnackbarDuration.LENGTH_SHORT)
                     .actionLabel("UNDO")
+                    .type(SnackbarType.MULTI_LINE)
                     .actionListener(new ActionClickListener() {
                         @Override
                         public void onActionClicked(Snackbar snackbar) {
