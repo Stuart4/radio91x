@@ -85,17 +85,12 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public boolean onError(MediaPlayer mp, int what, int extra) {
                 if (extra == MediaPlayer.MEDIA_ERROR_IO || what == MediaPlayer.MEDIA_ERROR_UNKNOWN) {
-                    streamer.stop();
-                    playPause.setImageResource(R.drawable.ic_play_circle_outline_black_36dp);
+                    playPause.callOnClick();
                     hideToolbar();
                     SnackbarManager.show(Snackbar.with(mainActivity).duration(Snackbar.SnackbarDuration.LENGTH_INDEFINITE).actionLabel("RETRY").text("Connection Issues").color(getResources().getColor(R.color.primary)).actionColor(getResources().getColor(R.color.accent)).actionListener(new ActionClickListener() {
                         @Override
                         public void onActionClicked(Snackbar snackbar) {
-                            streamer.preparing = false;
-                            streamer.play();
-                            progressBar.setIndeterminate(true);
-                            progressBar.setVisibility(View.VISIBLE);
-                            playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_36dp);
+                            playPause.callOnClick();
                         }
                     }).eventListener(new EventListener() {
                         @Override
@@ -134,6 +129,7 @@ public class MainActivity extends ActionBarActivity {
                 return false;
             }
         });
+        playPause.setTag("play");
         if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) streamer.stop();
         albumView = (ImageView) findViewById(R.id.albumImageView);
         songText = (TextView) findViewById(R.id.songNameTextView);
@@ -141,10 +137,11 @@ public class MainActivity extends ActionBarActivity {
         playPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (streamer.isPlaying()) {
+                if (v.getTag().equals("play")) {
                     streamer.stop();
                     stopParser();
                     playPause.setImageResource(R.drawable.ic_play_circle_outline_black_36dp);
+                    playPause.setTag("pause");
                     hideNotification();
                 } else {
                     int res = audioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
@@ -153,6 +150,7 @@ public class MainActivity extends ActionBarActivity {
                     showNotification();
                     startParser();
                     playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_36dp);
+                    playPause.setTag("play");
                     showNotification();
                 }
             }

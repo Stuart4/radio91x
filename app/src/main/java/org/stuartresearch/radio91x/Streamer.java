@@ -52,9 +52,11 @@ public class Streamer {
         if (prepared) {
             mediaPlayer.start();
             playing = true;
-        } else if (!preparing) {
+        } else if (true) {
             progressBar.setVisibility(View.VISIBLE);
             progressBar.setIndeterminate(true);
+            if (mediaPlayer != null)
+                mediaPlayer.release();
             mediaPlayer = null;
             mediaPlayer = new MediaPlayer();
             try {
@@ -96,8 +98,6 @@ public class Streamer {
     }
 
     public void stop() {
-        if (!prepared) return;
-        mediaPlayer.stop();
         mediaPlayer.reset();
         prepared = false;
         playing = false;
