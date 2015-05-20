@@ -40,8 +40,6 @@ class Parser extends AsyncTask<Void, Void, SongInfo> {
                         "/api/livestream-redirect/XTRAFM.mp3");
                 ParsingHeaderData streaming = new ParsingHeaderData();
                 ParsingHeaderData.TrackData trackData = streaming.getTrackDetails(url);
-                Log.d("91X", String.format("Read -> Artist: %s, Title: %s", trackData.artist,
-                        trackData.title));
                 if (!songTitle.equals(trackData.title)) {
                     if (!artistName.equals(trackData.artist)) {
                         songTitle = trackData.title;
