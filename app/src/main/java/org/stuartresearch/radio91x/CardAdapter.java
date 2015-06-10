@@ -202,7 +202,6 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                 }
             };
             int res = audioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-
             SnackbarManager.show(Snackbar.with(context).text(String
                     .format("Playing a preview of %s by %s.",
                             songInfoStack.get(i).songName,
@@ -216,7 +215,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                         @Override
                         public void onActionClicked(Snackbar snackbar) {
                             sample.release();
-                            ((MainActivity) context).streamer.sound();
+                            ((MainActivity) context).localBinder.getService().sound();
                         }
                     })
                     .eventListener(new EventListener() {
@@ -252,7 +251,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
                         }
                     }));
-            ((MainActivity) context).streamer.noSound();
+            ((MainActivity) context).localBinder.getService().noSound();
             try {
                 sample.setDataSource(context, Uri.parse(songInfoStack.get(i).songSample));
                 sample.prepareAsync();
@@ -266,7 +265,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                     @Override
                     public void onCompletion(MediaPlayer mp) {
                         sample.release();
-                        ((MainActivity) context).streamer.sound();
+                        ((MainActivity) context).localBinder.getService().sound();
                         MainActivity.playingElsewhere = false;
                         SnackbarManager.dismiss();
                     }
@@ -275,7 +274,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                     @Override
                     public boolean onError(MediaPlayer mp, int what, int extra) {
                         sample.release();
-                        ((MainActivity) context).streamer.sound();
+                        ((MainActivity) context).localBinder.getService().sound();
                         MainActivity.playingElsewhere = false;
                         SnackbarManager.dismiss();
                         return false;

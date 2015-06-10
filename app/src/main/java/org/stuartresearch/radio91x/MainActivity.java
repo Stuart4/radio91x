@@ -3,16 +3,22 @@ package org.stuartresearch.radio91x;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -23,6 +29,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RemoteViews;
@@ -39,10 +46,13 @@ import com.squareup.picasso.Picasso;
 
 import java.util.Vector;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements ServiceConnection,
+        View.OnClickListener {
+
     private ImageView albumView;
     private TextView songText;
     private TextView artistText;
+    ProgressBar progressBar;
     private Parser parser;
     private final Vector<SongInfo> songStack = new Vector<>();
     private CardAdapter cardAdapter;
@@ -50,8 +60,6 @@ public class MainActivity extends ActionBarActivity {
     private RecyclerView recyclerView;
     private boolean showingFavs = false;
     boolean showingSnackbar = false;
-    Streamer streamer;
-    private AudioManager.OnAudioFocusChangeListener afChangeListener;
     private AudioManager audioManager;
     private ImageView playPause;
     public static boolean playingElsewhere = false;
@@ -61,125 +69,24 @@ public class MainActivity extends ActionBarActivity {
     private final LinearLayoutManager lm = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL,
             false);
     private SharedPreferences sharedPreferences;
-    private NotificationManager notificationManager;
+    protected RadioService.LocalBinder localBinder;
+    private boolean bound = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         playPause = (ImageView) findViewById(R.id.controlImageView);
-        new AudioPlayerBroadcastReceiver(playPause);
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
-            @Override
-            public void onAudioFocusChange(int focusChange) {
-                if (playingElsewhere) return;
-                if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-                    if (streamer.isPlaying()) playPause.callOnClick();
-                } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK ||
-                        focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
-                    streamer.noSound();
-                } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-                    streamer.sound();
-                }
-            }
-        };
-        final ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
-        int res = audioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN);
-        final MainActivity mainActivity = this;
-        streamer = new Streamer(getApplicationContext(), progressBar,
-                new MediaPlayer.OnErrorListener() {
-            @Override
-            public boolean onError(MediaPlayer mp, int what, int extra) {
-                if (extra == MediaPlayer.MEDIA_ERROR_IO
-                        || what == MediaPlayer.MEDIA_ERROR_UNKNOWN) {
-                    playPause.callOnClick();
-                    hideToolbar();
-                    SnackbarManager.show(Snackbar.with(mainActivity)
-                            .duration(Snackbar.SnackbarDuration.LENGTH_INDEFINITE)
-                            .actionLabel(getResources().getString(R.string.retry))
-                            .text(getResources().getString(R.string.connectionIssues))
-                            .color(getResources().getColor(R.color.primary))
-                            .actionColor(getResources().getColor(R.color.accent))
-                            .actionListener(new ActionClickListener() {
-                                @Override
-                                public void onActionClicked(Snackbar snackbar) {
-                                    playPause.callOnClick();
-                                }
-                            }).eventListener(new EventListener() {
-                        @Override
-                        public void onShow(Snackbar snackbar) {
-                            progressBar.setIndeterminate(false);
-                            progressBar.setVisibility(View.GONE);
-                        }
-
-                        @Override
-                        public void onShowByReplace(Snackbar snackbar) {
-
-                        }
-
-                        @Override
-                        public void onShown(Snackbar snackbar) {
-
-                        }
-
-                        @Override
-                        public void onDismiss(Snackbar snackbar) {
-                            showToolbar();
-                        }
-
-                        @Override
-                        public void onDismissByReplace(Snackbar snackbar) {
-
-                        }
-
-                        @Override
-                        public void onDismissed(Snackbar snackbar) {
-
-                        }
-                    }));
-                    return true;
-                }
-                return false;
-            }
-        });
         playPause.setTag("play");
-        if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) streamer.stop();
         albumView = (ImageView) findViewById(R.id.albumImageView);
         songText = (TextView) findViewById(R.id.songNameTextView);
         artistText = (TextView) findViewById(R.id.ArtistNameTextView);
-        playPause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (v.getTag().equals("play")) {
-                    if (!streamer.isPlaying()) {
-                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
-                        return;
-                    }
-                    streamer.stop();
-                    stopParser();
-                    songText.setText(getResources().getString(R.string.stationName));
-                    artistText.setText(getResources().getString(R.string.LIR));
-                    playPause.setImageResource(R.drawable.ic_play_circle_outline_black_36dp);
-                    playPause.setTag("pause");
-                    hideNotification();
-                } else {
-                    int res = audioManager.requestAudioFocus(afChangeListener,
-                            AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-                    if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) return;
-                    streamer.play();
-                    showNotification();
-                    startParser();
-                    playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_36dp);
-                    playPause.setTag("play");
-                    showNotification();
-                }
-            }
-        });
-        if (res != AudioManager.AUDIOFOCUS_REQUEST_FAILED)
+        final ServiceConnection conn = this;
+        playPause.setOnClickListener(this);
             startParser();
         recyclerView = (RecyclerView) findViewById(R.id.cardList);
         recyclerView.setHasFixedSize(true);
@@ -221,8 +128,11 @@ public class MainActivity extends ActionBarActivity {
                     .duration(Snackbar.SnackbarDuration.LENGTH_SHORT)
                     .actionLabel(getResources().getString(R.string.close)));
         }
-        showNotification();
-        startService(new Intent(this, RadioService.class));
+
+
+        Intent intent = new Intent(getApplicationContext(), RadioService.class);
+        bindService(intent, this, Context.BIND_AUTO_CREATE);
+        startService(intent);
     }
 
     @Override
@@ -260,7 +170,6 @@ public class MainActivity extends ActionBarActivity {
         showFavs.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
-                //TODO
                 if (showingFavs) {
                     showFavs.setIcon(getDrawable(R.drawable.ic_favorite_black_24dp));
                     showingFavs = false;
@@ -313,6 +222,18 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        AudioPlayerBroadcastReceiver.setActivity(this);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        AudioPlayerBroadcastReceiver.setActivity(null);
+    }
+
     public void updateSongInfo(SongInfo songInfo) {
         if (songInfo.trackId == -655) {
             songText.setText(getResources().getString(R.string.outOfSync));
@@ -350,7 +271,8 @@ public class MainActivity extends ActionBarActivity {
         parser.songTitle = songInfo.songName;
         parser.artistName = songInfo.artistName;
         if (songInfo.trackId != -666) {
-            streamer.sound();
+            if(bound)
+                localBinder.getService().sound();
             CardAdapter.playingTopCard = true;
             songStack.add(songInfo);
             cardAdapter.notifyItemInserted(0);
@@ -359,13 +281,13 @@ public class MainActivity extends ActionBarActivity {
                 recyclerView.smoothScrollToPosition(0);
         } else {
             if (sharedPreferences.getBoolean("muteAds", new Boolean(true))) {
-                streamer.noSound();
+                if (bound)
+                    localBinder.getService().noSound();
             }
             CardAdapter.playingTopCard = false;
             cardAdapter.notifyItemChanged(0);
         }
         parser.execute();
-        showNotification();
     }
 
     private void startParser() {
@@ -380,84 +302,16 @@ public class MainActivity extends ActionBarActivity {
         parser.running = false;
     }
 
-    private void showNotification() {
-        Intent pause = new Intent();
-        pause.setAction("org.stuartresearch.radio91x.ACTION_PAUSE");
-        PendingIntent pausePending = PendingIntent.getBroadcast(this, 0, pause, 0);
-        NotificationCompat.Builder mBuilder = null;
-        mBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_radio_white_24dp)
-                .setVisibility(Notification.VISIBILITY_PUBLIC)
-                .setContentTitle(songText.getText())
-                .setContentText(artistText.getText())
-                .setColor(getResources().getColor(R.color.primary));
-
-        Intent reopenIntent = new Intent(this, MainActivity.class);
-        reopenIntent.setAction(Intent.ACTION_MAIN);
-        reopenIntent.addCategory(Intent.CATEGORY_HOME);
-        PendingIntent reopenPending = PendingIntent.getActivity(this, 0, reopenIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-        mBuilder.setContentIntent(reopenPending);
-        Notification notification = mBuilder.build();
-        RemoteViews smallView = new RemoteViews(this.getPackageName(),
-                R.layout.mini_notification_layout);
-        smallView.setTextViewText(R.id.miniNotificationSongName, songText.getText());
-        smallView.setTextViewText(R.id.miniNotificationArtistName, artistText.getText());
-        smallView.setImageViewResource(R.id.miniNotificationButton,
-                R.drawable.ic_pause_black_24dp);
-        smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
-        notification.contentView = smallView;
-        notification.priority = Notification.PRIORITY_HIGH;
-        notification.contentIntent = reopenPending;
-        notificationManager.cancel(919191);
-        notificationManager.notify(919191, notification);
-    }
-
-    private void hideNotification() {
-        Intent play = new Intent();
-        play.setAction("org.stuartresearch.radio91x.ACTION_PLAY");
-        PendingIntent playPending = PendingIntent.getBroadcast (this, 0, play, 0);
-        NotificationCompat.Builder mBuilder = null;
-        mBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_radio_white_24dp)
-                .setVisibility(Notification.VISIBILITY_PUBLIC)
-                .setContentTitle(songText.getText())
-                .setContentText(artistText.getText())
-                .setColor(getResources().getColor(R.color.primary));
-
-        Intent reopenIntent = new Intent(this, MainActivity.class);
-        reopenIntent.setAction(Intent.ACTION_MAIN);
-        reopenIntent.addCategory(Intent.CATEGORY_HOME);
-        PendingIntent reopenPending = PendingIntent.getActivity(this, 0, reopenIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-        mBuilder.setContentIntent(reopenPending);
-        Notification notification = mBuilder.build();
-        RemoteViews smallView = new RemoteViews(this.getPackageName(),
-                R.layout.mini_notification_layout);
-        smallView.setTextViewText(R.id.miniNotificationSongName,
-                getResources().getString(R.string.stationName));
-        smallView.setTextViewText(R.id.miniNotificationArtistName,
-                getResources().getString(R.string.LIR));
-        smallView.setImageViewResource(R.id.miniNotificationButton,
-                R.drawable.ic_play_arrow_black_24dp);
-        smallView.setOnClickPendingIntent(R.id.miniNotificationButton, playPending);
-        notification.contentView = smallView;
-        notification.priority = Notification.PRIORITY_HIGH;
-        notification.contentIntent = reopenPending;
-        notificationManager.cancel(919191);
-        notificationManager.notify(919191, notification);
-    }
 
 
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        streamer.kill();
         stopParser();
-        hideNotification();
         favoritesDataSource.close();
         Log.d("91x", "DESTROYED!!!");
+        unbindService(this);
     }
 
     @Override
@@ -472,6 +326,7 @@ public class MainActivity extends ActionBarActivity {
     void showToolbar() {
         toolBar.animate().translationY(0).setInterpolator(new DecelerateInterpolator()).start();
         toolbarShowing = true;
+        finish();
     }
 
     void hideToolbar() {
@@ -479,5 +334,56 @@ public class MainActivity extends ActionBarActivity {
                 .setInterpolator(new AccelerateInterpolator()).start();
         toolbarShowing = false;
     }
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        Log.d("91x", "Connection Established!");
+        localBinder = (RadioService.LocalBinder) service;
+        bound = true;
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+        Log.d("91x", "We Are Lost!");
+        Intent intent = new Intent(getApplicationContext(), RadioService.class);
+        bindService(intent, this, Context.BIND_AUTO_CREATE);
+        bound = false;
+    }
+
+    @Override
+    public void onClick(View v) {
+        if (!bound)
+            return;
+
+        if (v.getTag().equals("play")) {
+            localBinder.getService().play();
+            streamPlaying();
+        } else {
+            localBinder.getService().stop();
+            streamStopped();
+        }
+    }
+
+    public void streamPlaying() {
+        playPause.setTag("pause");
+        playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_36dp);
+        cardAdapter = new CardAdapter(songStack, mainActivity, true);
+    }
+
+    public void streamStopped() {
+        playPause.setTag("play");
+        playPause.setImageResource(R.drawable.ic_play_circle_outline_black_36dp);
+        cardAdapter = new CardAdapter(songStack, mainActivity, false);
+    }
+
+    public void streamLoading() {
+        progressBar.setIndeterminate(true);
+    }
+
+    public void streamLoaded() {
+        progressBar.setIndeterminate(false);
+
+    }
+
 
 }

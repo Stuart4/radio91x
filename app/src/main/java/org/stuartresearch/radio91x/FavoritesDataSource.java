@@ -33,6 +33,7 @@ class FavoritesDataSource {
     }
 
     public void favorite(SongInfo songInfo) {
+        if (!db.isOpen()) return;
         ContentValues values = new ContentValues();
         values.put(FavoritesSqliteHelper.COLUMN_ID, songInfo.trackId);
         values.put(FavoritesSqliteHelper.COLUMN_SONGNAME, songInfo.songName);
@@ -44,11 +45,13 @@ class FavoritesDataSource {
     }
 
     public void unfavorite(SongInfo songInfo) {
+        if (!db.isOpen()) return;
         db.delete(FavoritesSqliteHelper.TABLE_NAME,
                 FavoritesSqliteHelper.COLUMN_ID + " = " + songInfo.trackId, null);
     }
 
     public Vector<SongInfo> getFavorites() {
+        if(!db.isOpen()) return new Vector<SongInfo>();
         Cursor cursor = db.rawQuery("SELECT * FROM " + FavoritesSqliteHelper.TABLE_NAME, null);
         int size = cursor.getCount();
         SongInfo[] songInfos = new SongInfo[size];
@@ -81,6 +84,7 @@ class FavoritesDataSource {
     }
 
     public boolean isFavorite(SongInfo songInfo) {
+        if(!db.isOpen()) return false;
         return db.rawQuery("SELECT * FROM " + FavoritesSqliteHelper.TABLE_NAME
                 + " WHERE " + FavoritesSqliteHelper.COLUMN_ID + " = " + songInfo.trackId, null)
                 .getCount() > 0;

@@ -1,38 +1,62 @@
 package org.stuartresearch.radio91x;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.IBinder;
 import android.widget.ImageView;
 
 /**
  * Created by jake on 5/15/15.
  */
-public class AudioPlayerBroadcastReceiver extends BroadcastReceiver {
-    private static ImageView playPause;
+public class AudioPlayerBroadcastReceiver extends BroadcastReceiver implements ServiceConnection{
+    private static MainActivity mainActivity;
+    private static RadioService radioService;
 
-    public AudioPlayerBroadcastReceiver() {
-        super();
+    public static void setActivity (MainActivity act) {
+        mainActivity = act;
     }
 
-    public AudioPlayerBroadcastReceiver(ImageView image) {
-        playPause = image;
+    public static void setService (RadioService srv) {
+        radioService = srv;
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        if (playPause == null) {
-            context.startActivity(new Intent(context, MainActivity.class));
-            return;
-        }
         String action = intent.getAction();
 
-        if (action.equals("org.stuartresearch.radio91x.ACTION_PLAY")) {
-            playPause.callOnClick();
-        } else if (action.equals("org.stuartresearch.radio91x.ACTION_PAUSE")) {
-            playPause.callOnClick();
+        if (mainActivity != null) {
+            if (action.equals("org.stuartresearch.radio91x.LOADED")) {
+                mainActivity.streamLoaded();
+            } else if (action.equals("org.stuartresearch.radio91x.LOADING")) {
+                mainActivity.streamLoading();
+            } else if (action.equals("org.stuartresearch.radio91x.ERROR")) {
+
+            } else if (action.equals("org.stuartresearch.radio91x.SONG")) {
+
+            }
         }
+
+        if (radioService != null) {
+            if (action.equals("org.stuartresearch.radio91x.PLAY")) {
+                radioService.play();
+            } else if (action.equals("org.stuartresearch.radio91x.PAUSE")) {
+                radioService.stop();
+            }
+        }
+    }
+
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
 
     }
 }
