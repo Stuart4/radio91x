@@ -1,7 +1,6 @@
 package org.stuartresearch.radio91x;
 
 import android.os.AsyncTask;
-import android.util.Log;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -23,12 +22,17 @@ import java.net.URL;
 class Parser extends AsyncTask<Void, Void, SongInfo> {
     boolean running = true;
 
-    private final MainActivity main;
+    private static MainActivity mainActivity;
+    private static RadioService radioService;
     String songTitle = new String();
     String artistName = new String();
 
-    public Parser(MainActivity mainActivity) {
-        main = mainActivity;
+    public static void setMainActivity(MainActivity act) {
+        mainActivity = act;
+    }
+
+    public static void setRadioService(RadioService srv) {
+        radioService = srv;
     }
 
     @Override
@@ -47,7 +51,7 @@ class Parser extends AsyncTask<Void, Void, SongInfo> {
                         SongInfo songInfo = new SongInfo();
                         if (songTitle.isEmpty() && artistName.isEmpty()) {
                             songInfo.trackId = -666;
-                            songInfo.songName = main.getString(R.string.advertisement);
+                            songInfo.songName = mainActivity.getString(R.string.advertisement);
                             return songInfo;
                         }
                         DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
@@ -128,10 +132,16 @@ class Parser extends AsyncTask<Void, Void, SongInfo> {
     @Override
     protected void onPostExecute(SongInfo songInfo) {
         if (songInfo == null) {
-            new Parser(main).execute();
+            Parser p = new Parser();
+            p.setMainActivity(mainActivity);
+            p.setRadioService(radioService);
+            p.execute();
             return;
         }
-        main.updateSongInfo(songInfo);
+        if (mainActivity != null)
+            mainActivity.updateSongInfo(songInfo);
+        if (radioService != null)
+            radioService.updateSongInfo(songInfo);
 
     }
 }

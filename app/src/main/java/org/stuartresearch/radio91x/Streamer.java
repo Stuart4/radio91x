@@ -4,7 +4,6 @@ import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 
 import java.io.IOException;

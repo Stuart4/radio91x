@@ -1,11 +1,9 @@
 package org.stuartresearch.radio91x;
 
-import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -16,12 +14,7 @@ import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.PowerManager;
-import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
-import android.view.View;
-import android.widget.ProgressBar;
 import android.widget.RemoteViews;
 
 import java.io.IOException;
@@ -34,6 +27,9 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
     private final Uri uri;
     private final IBinder mBinder = new LocalBinder();
     private MediaPlayer mediaPlayer = null;
+    private Parser parser;
+    private String songTitle = "91x";
+    private String albumArtist = "Local. Independent. Radio.";
     private boolean playing = false;
     private boolean prepared = false;
     private AudioManager audioManager = null;
@@ -62,6 +58,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         }
         showNotification();
         AudioPlayerBroadcastReceiver.setService(this);
+        Parser.setRadioService(this);
         super.onCreate();
     }
 
@@ -83,6 +80,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         mediaPlayer = null;
         running = false;
         AudioPlayerBroadcastReceiver.setService(null);
+        Parser.setRadioService(null);
         super.onDestroy();
     }
 
@@ -130,12 +128,15 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
             return;
         }
 
-
+        showNotification();
         if (prepared) {
             mediaPlayer.start();
             mediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             wifiLock.acquire();
             playing = true;
+            showNotification();
+            stopParser();
+            startParser();
         } else {
             onLoading();
             if (mediaPlayer != null)
@@ -154,6 +155,8 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
                         playing = true;
                         onLoaded();
                         onPlaying();
+                        stopParser();
+                        startParser();
                     }
                 });
                 mediaPlayer.setOnErrorListener(this);
@@ -164,6 +167,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
                 mediaError();
             }
         }
+        startParser();
     }
 
     public void noSound() {
@@ -187,6 +191,9 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
 
         onLoaded();
         onStopped();
+        stopParser();
+        hideNotification();
+        wifiLock.release();
     }
 
     public boolean isPlaying() {
@@ -236,8 +243,8 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         Notification notification = mBuilder.build();
         RemoteViews smallView = new RemoteViews(this.getPackageName(),
                 R.layout.mini_notification_layout);
-        smallView.setTextViewText(R.id.miniNotificationSongName, "91x");
-        smallView.setTextViewText(R.id.miniNotificationArtistName, "91x");
+        smallView.setTextViewText(R.id.miniNotificationSongName, songTitle);
+        smallView.setTextViewText(R.id.miniNotificationArtistName, albumArtist);
         smallView.setImageViewResource(R.id.miniNotificationButton,
                 R.drawable.ic_pause_black_24dp);
         smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
@@ -249,6 +256,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
     }
 
     private void hideNotification() {
+        stopForeground(true);
         Intent play = new Intent();
         play.setAction("org.stuartresearch.radio91x.PLAY");
         PendingIntent playPending = PendingIntent.getBroadcast (this, 0, play, 0);
@@ -281,6 +289,32 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         notification.contentIntent = reopenPending;
         notificationManager.cancel(919191);
         notificationManager.notify(919191, notification);
+    }
+
+    public void updateSongInfo(SongInfo songInfo) {
+        if (songInfo.trackId == -666) {
+            songTitle = "Advertisement";
+            albumArtist = "";
+        } else {
+            songTitle = songInfo.songName;
+            albumArtist = songInfo.artistName;
+        }
+        startParser();
+        showNotification();
+    }
+
+    private void startParser() {
+        parser = new Parser();
+        parser.songTitle = songTitle;
+        parser.artistName = albumArtist;
+        parser.running = true;
+        parser.execute();
+
+    }
+
+    private void stopParser() {
+        parser.cancel(true);
+        parser.running = false;
     }
 
 }

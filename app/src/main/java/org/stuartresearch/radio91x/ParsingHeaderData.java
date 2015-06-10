@@ -1,7 +1,6 @@
 package org.stuartresearch.radio91x;
 
 import android.text.TextUtils;
-import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -121,8 +120,6 @@ public class ParsingHeaderData {
             metadata = ParsingHeaderData.parsingMetadata(metaData.toString());
             stream.close();
         } catch (Exception e) {
-            if (e != null && e.equals(null))
-                Log.e("Error", e.getMessage());
         } finally {
             if (stream != null)
                 stream.close();

@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
-import android.widget.ImageView;
 
 /**
  * Created by jake on 5/15/15.
@@ -34,9 +33,11 @@ public class AudioPlayerBroadcastReceiver extends BroadcastReceiver implements S
             } else if (action.equals("org.stuartresearch.radio91x.LOADING")) {
                 mainActivity.streamLoading();
             } else if (action.equals("org.stuartresearch.radio91x.ERROR")) {
-
-            } else if (action.equals("org.stuartresearch.radio91x.SONG")) {
-
+                mainActivity.streamError();
+            } else if (action.equals("org.stuartresearch.radio91x.PLAYING")) {
+                mainActivity.streamPlaying();
+            } else if (action.equals("org.stuartresearch.radio91x.STOPPED")) {
+                mainActivity.streamStopped();
             }
         }
 

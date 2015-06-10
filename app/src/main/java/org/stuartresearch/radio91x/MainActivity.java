@@ -1,38 +1,27 @@
 package org.stuartresearch.radio91x;
 
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.RemoteViews;
 import android.widget.TextView;
 
 import com.github.ksoichiro.android.observablescrollview.ObservableRecyclerView;
@@ -41,7 +30,6 @@ import com.github.ksoichiro.android.observablescrollview.ScrollState;
 import com.nispok.snackbar.Snackbar;
 import com.nispok.snackbar.SnackbarManager;
 import com.nispok.snackbar.listeners.ActionClickListener;
-import com.nispok.snackbar.listeners.EventListener;
 import com.squareup.picasso.Picasso;
 
 import java.util.Vector;
@@ -53,7 +41,6 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     private TextView songText;
     private TextView artistText;
     ProgressBar progressBar;
-    private Parser parser;
     private final Vector<SongInfo> songStack = new Vector<>();
     private CardAdapter cardAdapter;
     private boolean toolbarShowing = true;
@@ -87,7 +74,6 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         artistText = (TextView) findViewById(R.id.ArtistNameTextView);
         final ServiceConnection conn = this;
         playPause.setOnClickListener(this);
-            startParser();
         recyclerView = (RecyclerView) findViewById(R.id.cardList);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(lm);
@@ -171,7 +157,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 if (showingFavs) {
-                    showFavs.setIcon(getDrawable(R.drawable.ic_favorite_black_24dp));
+                    showFavs.setIcon(R.drawable.ic_favorite_black_24dp);
                     showingFavs = false;
                     if (songStack.get(songStack.size() - 1).trackId == -666) {
                         cardAdapter = new CardAdapter(songStack, mainActivity, false);
@@ -183,7 +169,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
                         showToolbar();
                     return true;
                 } else {
-                    showFavs.setIcon(getDrawable(R.drawable.ic_favorite_red_24dp));
+                    showFavs.setIcon(R.drawable.ic_favorite_red_24dp);
                     showingFavs = true;
                     cardAdapter = new CardAdapter(favoritesDataSource.getFavorites(),
                             mainActivity, false);
@@ -226,12 +212,14 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     public void onResume() {
         super.onResume();
         AudioPlayerBroadcastReceiver.setActivity(this);
+        Parser.setMainActivity(this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         AudioPlayerBroadcastReceiver.setActivity(null);
+        Parser.setMainActivity(null);
     }
 
     public void updateSongInfo(SongInfo songInfo) {
@@ -244,18 +232,10 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         }
         if (songStack.size() > 0
                 && songInfo.trackId == songStack.get(songStack.size() - 1).trackId) {
-            parser = new Parser(this);
-            parser.songTitle = songInfo.songName;
-            parser.artistName = songInfo.artistName;
-            parser.execute();
             return;
         }
         if (songStack.size() > 1
                 && songInfo.trackId == songStack.get(songStack.size() - 2).trackId) {
-            parser = new Parser(this);
-            parser.songTitle = songInfo.songName;
-            parser.artistName = songInfo.artistName;
-            parser.execute();
             return;
         }
         songText.setText(songInfo.songName);
@@ -267,9 +247,6 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         } else {
             albumView.setVisibility(View.GONE);
         }
-        parser = new Parser(this);
-        parser.songTitle = songInfo.songName;
-        parser.artistName = songInfo.artistName;
         if (songInfo.trackId != -666) {
             if(bound)
                 localBinder.getService().sound();
@@ -287,25 +264,8 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
             CardAdapter.playingTopCard = false;
             cardAdapter.notifyItemChanged(0);
         }
-        parser.execute();
     }
 
-    private void startParser() {
-        parser = new Parser(this);
-        if (songStack.size() > 0) {
-            SongInfo current = songStack.get(songStack.size() - 1);
-            parser.songTitle = current.songName;
-            parser.artistName = current.artistName;
-        }
-        parser.running = true;
-        parser.execute();
-
-    }
-
-    private void stopParser() {
-        parser.cancel(true);
-        parser.running = false;
-    }
 
 
 
@@ -313,9 +273,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        stopParser();
         favoritesDataSource.close();
-        Log.d("91x", "DESTROYED!!!");
         unbindService(this);
     }
 
@@ -341,14 +299,12 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
-        Log.d("91x", "Connection Established!");
         localBinder = (RadioService.LocalBinder) service;
         bound = true;
     }
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
-        Log.d("91x", "We Are Lost!");
         Intent intent = new Intent(getApplicationContext(), RadioService.class);
         bindService(intent, this, Context.BIND_AUTO_CREATE);
         bound = false;
@@ -372,23 +328,39 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         playPause.setTag("pause");
         playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_36dp);
         cardAdapter = new CardAdapter(songStack, mainActivity, true);
-        startParser();
+        CardAdapter.playingTopCard = false;
+        cardAdapter.notifyItemChanged(0);
     }
 
     public void streamStopped() {
         playPause.setTag("play");
         playPause.setImageResource(R.drawable.ic_play_circle_outline_black_36dp);
-        cardAdapter = new CardAdapter(songStack, mainActivity, false);
-        stopParser();
+        CardAdapter.playingTopCard = false;
+        cardAdapter.notifyItemChanged(0);
     }
 
     public void streamLoading() {
         progressBar.setIndeterminate(true);
+        progressBar.setVisibility(View.VISIBLE);
     }
 
     public void streamLoaded() {
         progressBar.setIndeterminate(false);
+        progressBar.setVisibility(View.GONE);
+    }
 
+    public void streamError() {
+        streamStopped();
+        SnackbarManager.show(Snackbar.with(this).text(getResources().getString(R.string.connectionIssues))
+                .actionColor(getResources().getColor(R.color.accent))
+                .color(getResources().getColor(R.color.primary))
+                .duration(Snackbar.SnackbarDuration.LENGTH_SHORT)
+                .actionLabel(getResources().getString(R.string.retry)).actionListener(new ActionClickListener() {
+                    @Override
+                    public void onActionClicked(Snackbar snackbar) {
+                        playPause.callOnClick();
+                    }
+                }));
     }
 
 

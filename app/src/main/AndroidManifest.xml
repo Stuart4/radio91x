@@ -39,6 +39,8 @@
                 <action android:name="org.stuartresearch.radio91x.LOADING" />
                 <action android:name="org.stuartresearch.radio91x.LOADED" />
                 <action android:name="org.stuartresearch.radio91x.ERROR" />
+                <action android:name="org.stuartresearch.radio91x.PLAYING" />
+                <action android:name="org.stuartresearch.radio91x.PAUSED" />
             </intent-filter>
         </receiver>
     </application>
