@@ -94,6 +94,6 @@
         android:visibility="visible"
         android:layout_alignParentBottom="true"
         android:layout_gravity="center_horizontal|bottom"
-        android:indeterminate="true" />
+        android:indeterminate="false" />
 
 </RelativeLayout>

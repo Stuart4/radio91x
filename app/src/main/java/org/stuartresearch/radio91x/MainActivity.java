@@ -292,6 +292,11 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
 
     private void startParser() {
         parser = new Parser(this);
+        if (songStack.size() > 0) {
+            SongInfo current = songStack.get(songStack.size() - 1);
+            parser.songTitle = current.songName;
+            parser.artistName = current.artistName;
+        }
         parser.running = true;
         parser.execute();
 
@@ -326,7 +331,6 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     void showToolbar() {
         toolBar.animate().translationY(0).setInterpolator(new DecelerateInterpolator()).start();
         toolbarShowing = true;
-        finish();
     }
 
     void hideToolbar() {
@@ -368,12 +372,14 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         playPause.setTag("pause");
         playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_36dp);
         cardAdapter = new CardAdapter(songStack, mainActivity, true);
+        startParser();
     }
 
     public void streamStopped() {
         playPause.setTag("play");
         playPause.setImageResource(R.drawable.ic_play_circle_outline_black_36dp);
         cardAdapter = new CardAdapter(songStack, mainActivity, false);
+        stopParser();
     }
 
     public void streamLoading() {

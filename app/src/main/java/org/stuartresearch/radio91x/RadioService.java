@@ -19,6 +19,7 @@ import android.os.PowerManager;
 import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.RemoteViews;
@@ -56,6 +57,9 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         filter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
 
         notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (audioManager == null) {
+            audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        }
         showNotification();
         AudioPlayerBroadcastReceiver.setService(this);
         super.onCreate();
@@ -63,9 +67,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
 
     @Override
     public IBinder onBind(Intent intent) {
-        if (audioManager == null) {
-            audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-        }
+
         return mBinder;
     }
 
@@ -217,7 +219,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
 
     private void showNotification() {
         Intent pause = new Intent();
-        pause.setAction("org.stuartresearch.radio91x.ACTION_PAUSE");
+        pause.setAction("org.stuartresearch.radio91x.PAUSE");
         PendingIntent pausePending = PendingIntent.getBroadcast(this, 0, pause, 0);
         NotificationCompat.Builder mBuilder = null;
         mBuilder = new NotificationCompat.Builder(this)
@@ -248,7 +250,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
 
     private void hideNotification() {
         Intent play = new Intent();
-        play.setAction("org.stuartresearch.radio91x.ACTION_PLAY");
+        play.setAction("org.stuartresearch.radio91x.PLAY");
         PendingIntent playPending = PendingIntent.getBroadcast (this, 0, play, 0);
         NotificationCompat.Builder mBuilder = null;
         mBuilder = new NotificationCompat.Builder(this)
