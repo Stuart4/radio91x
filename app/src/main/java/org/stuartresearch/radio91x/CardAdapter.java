@@ -22,19 +22,17 @@ import com.nispok.snackbar.listeners.EventListener;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Transformation;
 
-import java.util.Vector;
-
 /**
  * Created by jake on 5/13/15.
  */
 public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder> {
-    private Vector<SongInfo> songInfoStack;
+    private SongStack songInfoStack;
     private Context context;
     private static FavoritesDataSource dataSource;
     static boolean playingTopCard = false;
     public final MainActivity mainActivity;
 
-    public CardAdapter(Vector<SongInfo> stack, MainActivity mainActivity, boolean playingTopCard) {
+    public CardAdapter(SongStack stack, MainActivity mainActivity, boolean playingTopCard) {
         songInfoStack = stack;
         this.context = mainActivity.getApplicationContext();
         CardAdapter.playingTopCard = playingTopCard;
@@ -43,6 +41,11 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
     public static void setDataSource(FavoritesDataSource newDataSource) {
         dataSource = newDataSource;
+    }
+
+    public void setSongInfoStack(SongStack stack) {
+        this.songInfoStack = stack;
+        notifyDataSetChanged();
     }
 
     @Override
@@ -55,8 +58,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
     }
 
     @Override
-    public void onBindViewHolder(SongInfoHolder songInfoHolder, int i) {
-        int pos = songInfoStack.size() - 1 - i;
+    public void onBindViewHolder(SongInfoHolder songInfoHolder, int pos) {
         if (dataSource == null) {
             songInfoHolder.favoriteSong.setVisibility(View.INVISIBLE);
         } else if (dataSource.isFavorite(songInfoStack.get(pos))) {
@@ -64,8 +66,8 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         } else {
             songInfoHolder.favoriteSong.setImageResource(R.drawable.ic_favorite_outline_black_24dp);
         }
-        SongInfo songInfo = songInfoStack.get(songInfoStack.size() - 1 - i);
-        if (i == 0 && playingTopCard) {
+        SongInfo songInfo = songInfoStack.get(pos);
+        if (pos == 0 && playingTopCard) {
             songInfoHolder.background.setVisibility(View.VISIBLE);
             songInfoHolder.equalizer.setVisibility(View.VISIBLE);
             songInfoHolder.albumImage.setAlpha(.25f);

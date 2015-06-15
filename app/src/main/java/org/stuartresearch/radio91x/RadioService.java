@@ -7,6 +7,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -14,7 +15,9 @@ import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 import android.widget.RemoteViews;
 
 import java.io.IOException;
@@ -36,6 +39,8 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
     WifiManager.WifiLock wifiLock;
     private static boolean running = false;
     private int binds = 0;
+    protected SongStack songStack = new SongStack(50);
+    private SharedPreferences sharedPreferences;
 
     public class LocalBinder extends Binder {
         RadioService getService() {
@@ -57,11 +62,11 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
             audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         }
         AudioPlayerBroadcastReceiver.setService(this);
-        Parser.setRadioService(this);
         currentSong.songName = "91x";
         currentSong.artistName = "Local. Independent. Radio";
         currentSong.trackId = -666;
         showNotification();
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         super.onCreate();
     }
 
@@ -83,7 +88,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         mediaPlayer = null;
         running = false;
         AudioPlayerBroadcastReceiver.setService(null);
-        Parser.setRadioService(null);
+        parser.removeRadioService();
         super.onDestroy();
     }
 
@@ -297,17 +302,34 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
     }
 
     public void updateSongInfo(SongInfo songInfo) {
-        if (songInfo.trackId == -666) {
-            songInfo.songName = "Advertisement";
-            songInfo.artistName = "";
+
+        if (songStack.size() > 0
+                && songInfo.trackId == songStack.get(songStack.size() - 1).trackId) {
+            new Parser(this, currentSong.songName, currentSong.artistName).execute();
+            return;
         }
-        currentSong = songInfo;
-        startParser();
-        showNotification();
+        if (songStack.size() > 1
+                && songInfo.trackId == songStack.get(songStack.size() - 2).trackId) {
+            new Parser(this, currentSong.songName, currentSong.artistName).execute();
+            return;
+        }
+
+        if (songInfo.trackId != -666) {
+            sound();
+            CardAdapter.playingTopCard = true;
+            songStack.insert(songInfo);
+            currentSong = songInfo;
+        } else {
+            if (sharedPreferences.getBoolean("muteAds", new Boolean(true))) {
+                noSound();
+            }
+
+        }
+        new Parser(this, currentSong.songName, currentSong.artistName).execute();
     }
 
     private void startParser() {
-        parser = new Parser();
+        parser = new Parser(this, currentSong.songName, currentSong.artistName);
         parser.songTitle = currentSong.songName;
         parser.artistName = currentSong.artistName;
         parser.running = true;
@@ -322,12 +344,12 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
 
     @Override
     public boolean onUnbind(Intent intent) {
-        if (binds == 1 && !playing) stopSelf();
+        if (binds == 1 && !playing) {
+            Log.e("91x", "KILLED THE SERVICE");
+            stopSelf();
+        }
         binds--;
         return super.onUnbind(intent);
     }
 
-    public void sendSong(MainActivity mainActivity) {
-        mainActivity.updateSongInfo(currentSong);
-    }
 }

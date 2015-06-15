@@ -4,12 +4,13 @@ package org.stuartresearch.radio91x;
  * Created by jake on 6/14/15.
  */
 public class SongStack {
-    private int[] data;
+    private SongInfo[] data;
     private int first = -1;
     private int size = 0;
+    private OnInsertListener onInsertListener;
 
     public SongStack(int cap) {
-        data = new int[cap];
+        data = new SongInfo[cap];
     }
 
     public SongStack() {
@@ -17,16 +18,18 @@ public class SongStack {
     }
 
     //insert at end
-    public void insert(int songInfo) {
+    public void insert(SongInfo songInfo) {
         first++;
         first = first % data.length;
         size++;
 
         data[first] = songInfo;
+
+        if (onInsertListener != null) onInsertListener.onInsert(songInfo);
     }
 
     //return counting from the back
-    public int get(int pos) {
+    public SongInfo get(int pos) {
         if (pos > size() - 1) {
             throw new IndexOutOfBoundsException("position > size - 1");
         }
@@ -40,5 +43,17 @@ public class SongStack {
 
     public int size() {
         return Math.min(size, data.length);
+    }
+
+    public void setOnInsertListener(OnInsertListener insertListener) {
+        this.onInsertListener = insertListener;
+    }
+
+    public void removeOnInsertListener() {
+        this.onInsertListener = null;
+    }
+
+    public interface OnInsertListener {
+        void onInsert(SongInfo songInfo);
     }
 }

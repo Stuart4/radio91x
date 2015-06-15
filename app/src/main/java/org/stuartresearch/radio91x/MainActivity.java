@@ -33,16 +33,13 @@ import com.nispok.snackbar.SnackbarManager;
 import com.nispok.snackbar.listeners.ActionClickListener;
 import com.squareup.picasso.Picasso;
 
-import java.util.Vector;
-
 public class MainActivity extends ActionBarActivity implements ServiceConnection,
-        View.OnClickListener {
+        View.OnClickListener, SongStack.OnInsertListener {
 
     private ImageView albumView;
     private TextView songText;
     private TextView artistText;
     ProgressBar progressBar;
-    private final Vector<SongInfo> songStack = new Vector<>();
     private CardAdapter cardAdapter;
     private boolean toolbarShowing = true;
     private RecyclerView recyclerView;
@@ -75,10 +72,10 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         artistText = (TextView) findViewById(R.id.ArtistNameTextView);
         final ServiceConnection conn = this;
         playPause.setOnClickListener(this);
+        cardAdapter = new CardAdapter(new SongStack(1), this, false);
         recyclerView = (RecyclerView) findViewById(R.id.cardList);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(lm);
-        cardAdapter = new CardAdapter(songStack, this, false);
         recyclerView.setAdapter(cardAdapter);
         if (Build.VERSION.SDK_INT >20)
             getWindow().setNavigationBarColor(getResources().getColor(R.color.primary_dark));
@@ -165,7 +162,8 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
                 if (showingFavs) {
                     showFavs.setIcon(R.drawable.ic_favorite_black_24dp);
                     showingFavs = false;
-                    if (songStack.size() > 0 && songStack.get(songStack.size() - 1).trackId == -666) {
+                    SongStack songStack = localBinder.getService().songStack;
+                    if (songStack.size() > 0 && songStack.get(0).trackId == -666) {
                         cardAdapter = new CardAdapter(songStack, mainActivity, false);
                     } else {
                         cardAdapter = new CardAdapter(songStack, mainActivity, true);
@@ -218,65 +216,12 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     public void onResume() {
         super.onResume();
         AudioPlayerBroadcastReceiver.setActivity(this);
-        Parser.setMainActivity(this);
-        cardAdapter.setContext(this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        Parser.setMainActivity(null);
     }
-
-    public void updateSongInfo(SongInfo songInfo) {
-        if (songInfo.trackId == -655) {
-            songText.setText(getResources().getString(R.string.outOfSync));
-            artistText.setText("");
-            CardAdapter.playingTopCard = false;
-            cardAdapter.notifyItemChanged(0);
-            return;
-        }
-        if (songStack.size() > 0
-                && songInfo.trackId == songStack.get(songStack.size() - 1).trackId) {
-            return;
-        }
-        if (songStack.size() > 1
-                && songInfo.trackId == songStack.get(songStack.size() - 2).trackId) {
-            return;
-        }
-        songText.setText(songInfo.songName);
-        artistText.setText(songInfo.artistName);
-        if (songInfo.imageUrl.length() > 0) {
-            Picasso.with(this).load(songInfo.imageUrl)
-                    .into(albumView);
-            albumView.setVisibility(View.VISIBLE);
-        } else {
-            albumView.setVisibility(View.GONE);
-        }
-        if (songInfo.trackId != -666) {
-            if(bound)
-                localBinder.getService().sound();
-            CardAdapter.playingTopCard = true;
-            songStack.add(songInfo);
-            cardAdapter.notifyItemInserted(0);
-            cardAdapter.notifyItemChanged(1);
-            cardAdapter.notifyDataSetChanged();
-            cardAdapter = new CardAdapter(songStack, mainActivity, true);
-            if (lm.findFirstCompletelyVisibleItemPosition() == 0)
-                recyclerView.smoothScrollToPosition(0);
-        } else {
-            if (sharedPreferences.getBoolean("muteAds", new Boolean(true))) {
-                if (bound)
-                    localBinder.getService().noSound();
-            }
-            CardAdapter.playingTopCard = false;
-            cardAdapter.notifyItemChanged(0);
-        }
-    }
-
-
-
-
 
     @Override
     protected void onDestroy() {
@@ -310,7 +255,8 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     public void onServiceConnected(ComponentName name, IBinder service) {
         localBinder = (RadioService.LocalBinder) service;
         bound = true;
-        localBinder.getService().sendSong(this);
+        localBinder.getService().songStack.setOnInsertListener(this);
+        cardAdapter.setSongInfoStack(localBinder.getService().songStack);
     }
 
     @Override
@@ -318,6 +264,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         Intent intent = new Intent(getApplicationContext(), RadioService.class);
         bindService(intent, this, Context.BIND_AUTO_CREATE);
         bound = false;
+        localBinder.getService().songStack.setOnInsertListener(null);
     }
 
     @Override
@@ -337,10 +284,8 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     public void streamPlaying() {
         playPause.setTag("pause");
         playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_36dp);
-        cardAdapter = new CardAdapter(songStack, mainActivity, true);
         CardAdapter.playingTopCard = true;
         cardAdapter.notifyItemChanged(0);
-        cardAdapter.notifyDataSetChanged();
     }
 
     public void streamStopped() {
@@ -348,7 +293,6 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         playPause.setImageResource(R.drawable.ic_play_circle_outline_black_36dp);
         CardAdapter.playingTopCard = false;
         cardAdapter.notifyItemChanged(0);
-        cardAdapter.notifyDataSetChanged();
     }
 
     public void streamLoading() {
@@ -376,4 +320,34 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     }
 
 
+    @Override
+    public void onInsert(SongInfo songInfo) {
+        cardAdapter.setContext(this);
+        if (songInfo.trackId == -655) {
+            songText.setText(getResources().getString(R.string.outOfSync));
+            artistText.setText("");
+            CardAdapter.playingTopCard = false;
+            cardAdapter.notifyItemChanged(0);
+            return;
+        }
+        songText.setText(songInfo.songName);
+        artistText.setText(songInfo.artistName);
+        if (songInfo.imageUrl.length() > 0) {
+            Picasso.with(this).load(songInfo.imageUrl)
+                    .into(albumView);
+            albumView.setVisibility(View.VISIBLE);
+        } else {
+            albumView.setVisibility(View.GONE);
+        }
+        if (songInfo.trackId != -666) {
+
+            cardAdapter.notifyItemInserted(0);
+            cardAdapter.notifyItemChanged(1);
+            if (lm.findFirstCompletelyVisibleItemPosition() == 0)
+                recyclerView.smoothScrollToPosition(0);
+        } else {
+            CardAdapter.playingTopCard = false;
+            cardAdapter.notifyItemChanged(0);
+        }
+    }
 }

@@ -5,9 +5,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import java.util.Arrays;
-import java.util.Vector;
-
 /**
  * Created by jake on 5/16/15.
  */
@@ -49,37 +46,38 @@ class FavoritesDataSource {
                 FavoritesSqliteHelper.COLUMN_ID + " = " + songInfo.trackId, null);
     }
 
-    public Vector<SongInfo> getFavorites() {
-        if(!db.isOpen()) return new Vector<SongInfo>();
+    public SongStack getFavorites() {
+        if(!db.isOpen()) return new SongStack(1);
         Cursor cursor = db.rawQuery("SELECT * FROM " + FavoritesSqliteHelper.TABLE_NAME, null);
         int size = cursor.getCount();
-        SongInfo[] songInfos = new SongInfo[size];
+        SongStack songInfos = new SongStack(size);
         for (int i = 0; i < size; i++) {
-            songInfos[i] = new SongInfo();
+            SongInfo si = new SongInfo();
             cursor.moveToFirst();
             cursor.move(i);
-            songInfos[i].trackId = cursor.getLong(0);
+            si.trackId = cursor.getLong(0);
             cursor.moveToFirst();
             cursor.move(i);
-            songInfos[i].songName = cursor.getString(1);
+            si.songName = cursor.getString(1);
             cursor.moveToFirst();
             cursor.move(i);
-            songInfos[i].artistName = cursor.getString(2);
+            si.artistName = cursor.getString(2);
             cursor.moveToFirst();
             cursor.move(i);
-            songInfos[i].imageUrl = cursor.getString(3);
+            si.imageUrl = cursor.getString(3);
             cursor.moveToFirst();
             cursor.move(i);
-            songInfos[i].buySong = cursor.getString(4);
+            si.buySong = cursor.getString(4);
             cursor.moveToFirst();
             cursor.move(i);
-            songInfos[i].songSample = cursor.getString(5);
+            si.songSample = cursor.getString(5);
             cursor.moveToFirst();
             cursor.move(i);
-            songInfos[i].favorite = true;
+            si.favorite = true;
+            songInfos.insert(si);
         }
         cursor.close();
-        return new Vector<>(Arrays.asList(songInfos));
+        return songInfos;
     }
 
     public boolean isFavorite(SongInfo songInfo) {

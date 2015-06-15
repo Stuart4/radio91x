@@ -23,129 +23,127 @@ import java.net.URL;
 class Parser extends AsyncTask<Void, Void, SongInfo> {
     boolean running = true;
 
-    private static MainActivity mainActivity;
     private static RadioService radioService;
     String songTitle = new String();
     String artistName = new String();
 
-    public static void setMainActivity(MainActivity act) {
-        mainActivity = act;
-    }
 
-    public static void setRadioService(RadioService srv) {
+    public Parser(RadioService srv, String song, String artist) {
         radioService = srv;
+        songTitle = song;
+        artistName = artist;
+
     }
 
     @Override
     protected SongInfo doInBackground(Void... params) {
-        while (running) {
-            try {
+        try {
 
-                URL url = new URL("http://playerservices.streamtheworld.com" +
-                        "/api/livestream-redirect/XTRAFM.mp3");
-                ParsingHeaderData streaming = new ParsingHeaderData();
-                ParsingHeaderData.TrackData trackData = streaming.getTrackDetails(url);
-                if (!songTitle.equals(trackData.title)) {
-                    if (!artistName.equals(trackData.artist)) {
-                        songTitle = trackData.title;
-                        artistName = trackData.artist;
-                        SongInfo songInfo = new SongInfo();
-                        if (songTitle.isEmpty() && artistName.isEmpty()) {
-                            songInfo.trackId = -666;
-                            songInfo.songName = mainActivity.getString(R.string.advertisement);
+            URL url = new URL("http://playerservices.streamtheworld.com" +
+                    "/api/livestream-redirect/XTRAFM.mp3");
+            ParsingHeaderData streaming = new ParsingHeaderData();
+            ParsingHeaderData.TrackData trackData = streaming.getTrackDetails(url);
+            if (!songTitle.equals(trackData.title)) {
+                if (!artistName.equals(trackData.artist)) {
+                    songTitle = trackData.title;
+                    artistName = trackData.artist;
+                    SongInfo songInfo = new SongInfo();
+                    if (songTitle.isEmpty() && artistName.isEmpty()) {
+                        songInfo.trackId = -666;
+                        songInfo.songName = radioService.getString(R.string.advertisement);
+                        return songInfo;
+                    }
+                    DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
+                    String jsonUrl = String.format("https://itunes.apple.com/search?term=" +
+                                    "%s+%s&country=us&callback=results&limit=1&entity=song",
+                            songTitle.replace(" ", "+"), artistName.replace(" ", "+"));
+                    HttpGet httpGet = new HttpGet(jsonUrl);
+                    try {
+                        HttpResponse httpResponse = defaultHttpClient.execute(httpGet);
+                        BufferedReader reader =
+                                new BufferedReader(new InputStreamReader(httpResponse.
+                                        getEntity().getContent(), "UTF-8"));
+                        String line;
+                        String json = new String();
+                        reader.readLine();
+                        reader.readLine();
+                        reader.readLine();
+
+                        while ((line = reader.readLine()) != null) {
+                            json += line;
+                        }
+                        json = json.substring(0, json.length() - 2);
+                        JSONObject jsonObject = new JSONObject(json);
+                        if (jsonObject.getInt("resultCount") == 0) {
+                            songInfo.songName = songTitle;
+                            songInfo.artistName = artistName;
                             return songInfo;
                         }
-                        DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
-                        String jsonUrl = String.format("https://itunes.apple.com/search?term=" +
-                                        "%s+%s&country=us&callback=results&limit=1&entity=song",
-                                songTitle.replace(" ", "+"), artistName.replace(" ", "+"));
-                        HttpGet httpGet = new HttpGet(jsonUrl);
+                        JSONArray jsonArray = jsonObject.getJSONArray("results");
+                        jsonObject = jsonArray.getJSONObject(0);
                         try {
-                            HttpResponse httpResponse = defaultHttpClient.execute(httpGet);
-                            BufferedReader reader =
-                                    new BufferedReader(new InputStreamReader(httpResponse.
-                                            getEntity().getContent(), "UTF-8"));
-                            String line;
-                            String json = new String();
-                            reader.readLine();
-                            reader.readLine();
-                            reader.readLine();
-
-                            while ((line = reader.readLine()) != null) {
-                                json += line;
-                            }
-                            json = json.substring(0, json.length() - 2);
-                            JSONObject jsonObject = new JSONObject(json);
-                            if (jsonObject.getInt("resultCount") == 0) {
-                                songInfo.songName = songTitle;
-                                songInfo.artistName = artistName;
-                                return songInfo;
-                            }
-                            JSONArray jsonArray = jsonObject.getJSONArray("results");
-                            jsonObject = jsonArray.getJSONObject(0);
-                            try {
-                                songInfo.imageUrl = jsonObject.getString("artworkUrl100")
-                                        .replaceFirst("100x100-75.jpg$", "600x600-50.jpg");
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                            try {
-                                songInfo.songSample = jsonObject.getString("previewUrl");
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                            try {
-                                songInfo.songName = jsonObject.getString("trackName");
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                            try {
-                                songInfo.artistName = jsonObject.getString("artistName");
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                            try {
-                                songInfo.buySong = jsonObject.getString("trackViewUrl");
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                            try {
-                                songInfo.trackId = jsonObject.getLong("trackId");
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                            return songInfo;
-                        } catch (Exception e) {
-                            Log.e("91x", Log.getStackTraceString(e));
-
+                            songInfo.imageUrl = jsonObject.getString("artworkUrl100")
+                                    .replaceFirst("100x100-75.jpg$", "600x600-50.jpg");
+                        } catch (JSONException e) {
                             e.printStackTrace();
                         }
+                        try {
+                            songInfo.songSample = jsonObject.getString("previewUrl");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            songInfo.songName = jsonObject.getString("trackName");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            songInfo.artistName = jsonObject.getString("artistName");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            songInfo.buySong = jsonObject.getString("trackViewUrl");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            songInfo.trackId = jsonObject.getLong("trackId");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        Log.e("91x", songInfo.toString());
+                        return songInfo;
+                    } catch (Exception e) {
+                        Log.e("91x", Log.getStackTraceString(e));
+
+                        e.printStackTrace();
                     }
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-            try {
-                Thread.sleep(30000);
-            } catch (InterruptedException dropIt) {}
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        try {
+            Thread.sleep(30000);
+        } catch (InterruptedException dropIt) {}
+    return null;
+    }
+
+    public void removeRadioService() {
+        radioService  = null;
     }
 
     @Override
     protected void onPostExecute(SongInfo songInfo) {
         if (songInfo == null) {
-            Parser p = new Parser();
-            p.setMainActivity(mainActivity);
-            p.setRadioService(radioService);
+            Parser p = new Parser(radioService, songTitle, artistName);
             p.execute();
             return;
         }
-        if (mainActivity != null)
-            mainActivity.updateSongInfo(songInfo);
+
         if (radioService != null)
             radioService.updateSongInfo(songInfo);
-
     }
 }
 
