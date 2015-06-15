@@ -79,7 +79,6 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(lm);
         cardAdapter = new CardAdapter(songStack, this, false);
-        SongStack ss = new SongStack(3);
         recyclerView.setAdapter(cardAdapter);
         if (Build.VERSION.SDK_INT >20)
             getWindow().setNavigationBarColor(getResources().getColor(R.color.primary_dark));
