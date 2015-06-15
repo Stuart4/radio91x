@@ -28,14 +28,14 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
     private final IBinder mBinder = new LocalBinder();
     private MediaPlayer mediaPlayer = null;
     private Parser parser;
-    private String songTitle = "91x";
-    private String albumArtist = "Local. Independent. Radio.";
+    private SongInfo currentSong = new SongInfo();
     private boolean playing = false;
     private boolean prepared = false;
     private AudioManager audioManager = null;
     private NotificationManager notificationManager;
     WifiManager.WifiLock wifiLock;
     private static boolean running = false;
+    private int binds = 0;
 
     public class LocalBinder extends Binder {
         RadioService getService() {
@@ -56,15 +56,18 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         if (audioManager == null) {
             audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         }
-        showNotification();
         AudioPlayerBroadcastReceiver.setService(this);
         Parser.setRadioService(this);
+        currentSong.songName = "91x";
+        currentSong.artistName = "Local. Independent. Radio";
+        currentSong.trackId = -666;
+        showNotification();
         super.onCreate();
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-
+        binds++;
         return mBinder;
     }
 
@@ -193,7 +196,9 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         onStopped();
         stopParser();
         hideNotification();
+        wifiLock.setReferenceCounted(false);
         wifiLock.release();
+        if (binds == 0) stopSelf();
     }
 
     public boolean isPlaying() {
@@ -243,8 +248,8 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         Notification notification = mBuilder.build();
         RemoteViews smallView = new RemoteViews(this.getPackageName(),
                 R.layout.mini_notification_layout);
-        smallView.setTextViewText(R.id.miniNotificationSongName, songTitle);
-        smallView.setTextViewText(R.id.miniNotificationArtistName, albumArtist);
+        smallView.setTextViewText(R.id.miniNotificationSongName, currentSong.songName);
+        smallView.setTextViewText(R.id.miniNotificationArtistName, currentSong.artistName);
         smallView.setImageViewResource(R.id.miniNotificationButton,
                 R.drawable.ic_pause_black_24dp);
         smallView.setOnClickPendingIntent(R.id.miniNotificationButton, pausePending);
@@ -293,20 +298,18 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
 
     public void updateSongInfo(SongInfo songInfo) {
         if (songInfo.trackId == -666) {
-            songTitle = "Advertisement";
-            albumArtist = "";
-        } else {
-            songTitle = songInfo.songName;
-            albumArtist = songInfo.artistName;
+            songInfo.songName = "Advertisement";
+            songInfo.artistName = "";
         }
+        currentSong = songInfo;
         startParser();
         showNotification();
     }
 
     private void startParser() {
         parser = new Parser();
-        parser.songTitle = songTitle;
-        parser.artistName = albumArtist;
+        parser.songTitle = currentSong.songName;
+        parser.artistName = currentSong.artistName;
         parser.running = true;
         parser.execute();
 
@@ -317,4 +320,14 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         parser.running = false;
     }
 
+    @Override
+    public boolean onUnbind(Intent intent) {
+        if (binds == 1 && !playing) stopSelf();
+        binds--;
+        return super.onUnbind(intent);
+    }
+
+    public void sendSong(MainActivity mainActivity) {
+        mainActivity.updateSongInfo(currentSong);
+    }
 }

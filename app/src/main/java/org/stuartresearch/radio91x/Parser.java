@@ -1,6 +1,7 @@
 package org.stuartresearch.radio91x;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -115,6 +116,8 @@ class Parser extends AsyncTask<Void, Void, SongInfo> {
                             }
                             return songInfo;
                         } catch (Exception e) {
+                            Log.e("91x", Log.getStackTraceString(e));
+
                             e.printStackTrace();
                         }
                     }

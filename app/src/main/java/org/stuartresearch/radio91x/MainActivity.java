@@ -15,6 +15,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -78,6 +79,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(lm);
         cardAdapter = new CardAdapter(songStack, this, false);
+        SongStack ss = new SongStack(3);
         recyclerView.setAdapter(cardAdapter);
         if (Build.VERSION.SDK_INT >20)
             getWindow().setNavigationBarColor(getResources().getColor(R.color.primary_dark));
@@ -108,6 +110,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
             favoritesDataSource.open();
             CardAdapter.setDataSource(favoritesDataSource);
         } catch (Exception e) {
+            Log.e("91x", Log.getStackTraceString(e));
             SnackbarManager.show(Snackbar.with(this).text(getResources().getString(R.string.FDU))
                     .actionColor(getResources().getColor(R.color.accent))
                     .color(getResources().getColor(R.color.primary))
@@ -136,6 +139,8 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
                     intent.setData(Uri.parse("tel:18585701919"));
                     startActivity(intent);
                 } catch (Exception e) {
+                    Log.e("91x", Log.getStackTraceString(e));
+
                     return false;
                 }
                 return true;
@@ -148,6 +153,8 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
                     startActivity(new Intent(Intent.ACTION_VIEW,
                             Uri.fromParts("sms", String.valueOf(33911), null)));
                 } catch (Exception e) {
+                    Log.e("91x", Log.getStackTraceString(e));
+
                     return false;
                 }
                 return true;
@@ -159,7 +166,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
                 if (showingFavs) {
                     showFavs.setIcon(R.drawable.ic_favorite_black_24dp);
                     showingFavs = false;
-                    if (songStack.get(songStack.size() - 1).trackId == -666) {
+                    if (songStack.size() > 0 && songStack.get(songStack.size() - 1).trackId == -666) {
                         cardAdapter = new CardAdapter(songStack, mainActivity, false);
                     } else {
                         cardAdapter = new CardAdapter(songStack, mainActivity, true);
@@ -213,12 +220,12 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         super.onResume();
         AudioPlayerBroadcastReceiver.setActivity(this);
         Parser.setMainActivity(this);
+        cardAdapter.setContext(this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        AudioPlayerBroadcastReceiver.setActivity(null);
         Parser.setMainActivity(null);
     }
 
@@ -254,6 +261,8 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
             songStack.add(songInfo);
             cardAdapter.notifyItemInserted(0);
             cardAdapter.notifyItemChanged(1);
+            cardAdapter.notifyDataSetChanged();
+            cardAdapter = new CardAdapter(songStack, mainActivity, true);
             if (lm.findFirstCompletelyVisibleItemPosition() == 0)
                 recyclerView.smoothScrollToPosition(0);
         } else {
@@ -274,6 +283,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     protected void onDestroy() {
         super.onDestroy();
         favoritesDataSource.close();
+        AudioPlayerBroadcastReceiver.setActivity(null);
         unbindService(this);
     }
 
@@ -301,6 +311,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     public void onServiceConnected(ComponentName name, IBinder service) {
         localBinder = (RadioService.LocalBinder) service;
         bound = true;
+        localBinder.getService().sendSong(this);
     }
 
     @Override
@@ -328,8 +339,9 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         playPause.setTag("pause");
         playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_36dp);
         cardAdapter = new CardAdapter(songStack, mainActivity, true);
-        CardAdapter.playingTopCard = false;
+        CardAdapter.playingTopCard = true;
         cardAdapter.notifyItemChanged(0);
+        cardAdapter.notifyDataSetChanged();
     }
 
     public void streamStopped() {
@@ -337,6 +349,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         playPause.setImageResource(R.drawable.ic_play_circle_outline_black_36dp);
         CardAdapter.playingTopCard = false;
         cardAdapter.notifyItemChanged(0);
+        cardAdapter.notifyDataSetChanged();
     }
 
     public void streamLoading() {

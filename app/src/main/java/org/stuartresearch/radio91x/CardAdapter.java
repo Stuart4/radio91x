@@ -7,6 +7,7 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,15 +28,17 @@ import java.util.Vector;
  * Created by jake on 5/13/15.
  */
 public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder> {
-    private final Vector<SongInfo> songInfoStack;
-    private final Context context;
+    private Vector<SongInfo> songInfoStack;
+    private Context context;
     private static FavoritesDataSource dataSource;
     static boolean playingTopCard = false;
+    public final MainActivity mainActivity;
 
-    public CardAdapter(Vector<SongInfo> stack, Context context, boolean playingTopCard) {
+    public CardAdapter(Vector<SongInfo> stack, MainActivity mainActivity, boolean playingTopCard) {
         songInfoStack = stack;
-        this.context = context;
+        this.context = mainActivity.getApplicationContext();
         CardAdapter.playingTopCard = playingTopCard;
+        this.mainActivity = mainActivity;
     }
 
     public static void setDataSource(FavoritesDataSource newDataSource) {
@@ -45,6 +48,10 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
     @Override
     public int getItemCount() {
         return songInfoStack.size();
+    }
+
+    public void setContext(Context context) {
+        this.context = context;
     }
 
     @Override
@@ -141,6 +148,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                         Math.min(albumImage.getWidth(), source.getWidth()),
                         Math.min(albumImage.getHeight(), source.getHeight()));
             } catch (Exception e) {
+                Log.e("91x", Log.getStackTraceString(e));
                 return source;
             }
             if (result != source) {
@@ -182,9 +190,9 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         @Override
         public void onClick(View v) {
             final MediaPlayer sample = new MediaPlayer();
-            AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            final AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
             MainActivity.playingElsewhere = true;
-            AudioManager.OnAudioFocusChangeListener afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+            final AudioManager.OnAudioFocusChangeListener afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
                 @Override
                 public void onAudioFocusChange(int focusChange) {
                     try {
@@ -201,7 +209,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                     }
                 }
             };
-            int res = audioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+            int res = audioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
             SnackbarManager.show(Snackbar.with(context).text(String
                     .format("Playing a preview of %s by %s.",
                             songInfoStack.get(i).songName,
@@ -215,7 +223,8 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                         @Override
                         public void onActionClicked(Snackbar snackbar) {
                             sample.release();
-                            ((MainActivity) context).localBinder.getService().sound();
+                            audioManager.abandonAudioFocus(afChangeListener);
+                            context.sendBroadcast(new Intent("org.stuartresearch.radio91x.SOUND"));
                         }
                     })
                     .eventListener(new EventListener() {
@@ -239,6 +248,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                         public void onDismiss(Snackbar snackbar) {
                             ((MainActivity) context).showToolbar();
                             ((MainActivity) context).showingSnackbar = false;
+                            sample.release();
                         }
 
                         @Override
@@ -251,7 +261,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
                         }
                     }));
-            ((MainActivity) context).localBinder.getService().noSound();
+            context.sendBroadcast(new Intent("org.stuartresearch.radio91x.NOSOUND"));
             try {
                 sample.setDataSource(context, Uri.parse(songInfoStack.get(i).songSample));
                 sample.prepareAsync();
@@ -265,7 +275,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                     @Override
                     public void onCompletion(MediaPlayer mp) {
                         sample.release();
-                        ((MainActivity) context).localBinder.getService().sound();
+                        context.sendBroadcast(new Intent("org.stuartresearch.radio91x.SOUND"));
                         MainActivity.playingElsewhere = false;
                         SnackbarManager.dismiss();
                     }
@@ -274,14 +284,14 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                     @Override
                     public boolean onError(MediaPlayer mp, int what, int extra) {
                         sample.release();
-                        ((MainActivity) context).localBinder.getService().sound();
+                        context.sendBroadcast(new Intent("org.stuartresearch.radio91x.SOUND"));
                         MainActivity.playingElsewhere = false;
                         SnackbarManager.dismiss();
                         return false;
                     }
                 });
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e("91x", Log.getStackTraceString(e));
             }
         }
     }

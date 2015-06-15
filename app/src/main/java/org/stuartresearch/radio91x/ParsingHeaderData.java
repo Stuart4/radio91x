@@ -1,6 +1,7 @@
 package org.stuartresearch.radio91x;
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,6 +53,8 @@ public class ParsingHeaderData {
                 }
             }
         } catch (Exception e) {
+            Log.e("91x", Log.getStackTraceString(e));
+
             e.printStackTrace();
         }
 
@@ -120,6 +123,8 @@ public class ParsingHeaderData {
             metadata = ParsingHeaderData.parsingMetadata(metaData.toString());
             stream.close();
         } catch (Exception e) {
+            Log.e("91x", Log.getStackTraceString(e));
+
         } finally {
             if (stream != null)
                 stream.close();

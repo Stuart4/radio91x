@@ -41,6 +41,9 @@
                 <action android:name="org.stuartresearch.radio91x.ERROR" />
                 <action android:name="org.stuartresearch.radio91x.PLAYING" />
                 <action android:name="org.stuartresearch.radio91x.PAUSED" />
+                <action android:name="org.stuartresearch.radio91x.SOUND" />
+                <action android:name="org.stuartresearch.radio91x.NOSOUND" />
+                <action android:name="android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY" />
             </intent-filter>
         </receiver>
     </application>

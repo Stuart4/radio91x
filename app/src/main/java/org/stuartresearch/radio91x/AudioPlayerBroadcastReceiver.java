@@ -46,6 +46,12 @@ public class AudioPlayerBroadcastReceiver extends BroadcastReceiver implements S
                 radioService.play();
             } else if (action.equals("org.stuartresearch.radio91x.PAUSE")) {
                 radioService.stop();
+            } else if (action.equals("org.stuartresearch.radio91x.NOSOUND")) {
+                radioService.noSound();
+            } else if (action.equals("org.stuartresearch.radio91x.NOSOUND")) {
+                radioService.sound();
+            } else if (action.equals("android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY")) {
+                radioService.stop();
             }
         }
     }
