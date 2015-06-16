@@ -56,6 +56,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     private SharedPreferences sharedPreferences;
     protected RadioService.LocalBinder localBinder;
     private boolean bound = false;
+    private boolean firstConnection = true;
 
 
     @Override
@@ -266,7 +267,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
             progressBar.setIndeterminate(false);
             progressBar.setVisibility(View.GONE);
         }
-        onInsert(localBinder.getService().getCurrentSong());
+
     }
 
     @Override
@@ -294,6 +295,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     public void streamPlaying() {
         playPause.setTag("pause");
         playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_36dp);
+        
         if(!showingFavs) {
             CardAdapter.playingTopCard = true;
             cardAdapter.notifyItemChanged(0);
@@ -303,6 +305,9 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     public void streamStopped() {
         playPause.setTag("play");
         playPause.setImageResource(R.drawable.ic_play_circle_outline_black_36dp);
+        artistText.setText(getString(R.string.LIR));
+        songText.setText(getString(R.string.stationName));
+        albumView.setImageResource(android.R.color.transparent);
         if(!showingFavs) {
             CardAdapter.playingTopCard = false;
             cardAdapter.notifyItemChanged(0);
@@ -337,6 +342,9 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     @Override
     public void onInsert(SongInfo songInfo) {
         cardAdapter.setContext(this);
+        if (bound && !localBinder.getService().isPlaying()) {
+            return;
+        }
         if (songInfo.trackId == -655) {
             songText.setText(getResources().getString(R.string.outOfSync));
             artistText.setText("");

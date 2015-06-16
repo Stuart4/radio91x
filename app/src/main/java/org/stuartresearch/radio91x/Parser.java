@@ -38,7 +38,6 @@ class Parser extends AsyncTask<Void, Void, SongInfo> {
     @Override
     protected SongInfo doInBackground(Void... params) {
         try {
-
             URL url = new URL("http://playerservices.streamtheworld.com" +
                     "/api/livestream-redirect/XTRAFM.mp3");
             ParsingHeaderData streaming = new ParsingHeaderData();
@@ -136,14 +135,15 @@ class Parser extends AsyncTask<Void, Void, SongInfo> {
 
     @Override
     protected void onPostExecute(SongInfo songInfo) {
-        if (songInfo == null) {
+        if (songInfo == null && !isCancelled()) {
             Parser p = new Parser(radioService, songTitle, artistName);
             p.execute();
             return;
-        }
-
-        if (radioService != null)
+        } else if (songInfo == null) {
+            return;
+        } else if (radioService != null) {
             radioService.updateSongInfo(songInfo);
+        }
     }
 }
 
@@ -151,7 +151,7 @@ class SongInfo implements Serializable {
     String songName = new String();
     String artistName = new String();
     String imageUrl = new String();
-    long trackId = 0;
+    long trackId = -42;
     String buySong = new String();
     String songSample = new String();
     boolean favorite = false;

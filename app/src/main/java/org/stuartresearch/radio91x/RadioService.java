@@ -31,6 +31,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
     private final IBinder mBinder = new LocalBinder();
     private MediaPlayer mediaPlayer = null;
     private Parser parser;
+    private boolean parserRunning = false;
     private SongInfo currentSong = new SongInfo();
     private boolean playing = false;
     private boolean prepared = false;
@@ -313,12 +314,12 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
     public void updateSongInfo(SongInfo songInfo) {
 
         if (songStack.size() > 0
-                && songInfo.trackId == songStack.get(0).trackId) {
+                && songInfo.trackId == songStack.get(0).trackId && parserRunning) {
             new Parser(this, currentSong.songName, currentSong.artistName).execute();
             return;
         }
         if (songStack.size() > 1
-                && songInfo.trackId == songStack.get(1).trackId) {
+                && songInfo.trackId == songStack.get(1).trackId && parserRunning) {
             new Parser(this, currentSong.songName, currentSong.artistName).execute();
             return;
         }
@@ -335,7 +336,8 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
             }
 
         }
-        new Parser(this, currentSong.songName, currentSong.artistName).execute();
+        if (parserRunning)
+            new Parser(this, currentSong.songName, currentSong.artistName).execute();
     }
 
     private void startParser() {
@@ -344,12 +346,13 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         parser.artistName = currentSong.artistName;
         parser.running = true;
         parser.execute();
+        parserRunning = true;
 
     }
 
     private void stopParser() {
         parser.cancel(true);
-        parser.running = false;
+        parserRunning = false;
     }
 
     @Override
