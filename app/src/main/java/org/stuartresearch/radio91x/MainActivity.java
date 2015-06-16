@@ -262,10 +262,6 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         bound = true;
         localBinder.getService().songStack.setOnInsertListener(this);
         cardAdapter.setSongInfoStack(localBinder.getService().songStack);
-        if (!localBinder.getService().isPreparing()) {
-            progressBar.setIndeterminate(false);
-            progressBar.setVisibility(View.GONE);
-        }
         onInsert(localBinder.getService().getCurrentSong());
     }
 

@@ -331,7 +331,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
             currentSong = songInfo;
             showNotification();
         } else {
-            if (sharedPreferences.getBoolean("muteAds", true)) {
+            if (sharedPreferences.getBoolean("muteAds", false)) {
                 noSound();
             }
 
