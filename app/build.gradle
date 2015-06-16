@@ -28,4 +28,5 @@ dependencies {
     compile 'com.github.ksoichiro:android-observablescrollview:1.5.1'
     compile 'com.nispok:snackbar:2.10.+'
     compile 'com.android.support:support-v4:22.1.1'
+    compile 'com.android.support:design:22.2.0'
 }

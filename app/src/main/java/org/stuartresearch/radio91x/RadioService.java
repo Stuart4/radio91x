@@ -34,6 +34,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
     private SongInfo currentSong = new SongInfo();
     private boolean playing = false;
     private boolean prepared = false;
+    private boolean preparing = false;
     private AudioManager audioManager = null;
     private NotificationManager notificationManager;
     WifiManager.WifiLock wifiLock;
@@ -79,7 +80,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         play();
-        return Service.START_STICKY;
+        return Service.START_NOT_STICKY;
     }
 
     @Override
@@ -95,7 +96,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
     @Override
     public void onAudioFocusChange(int focusChange) {
         if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-            stop();
+            stop(false);
         } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK ||
                 focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
             noSound();
@@ -142,6 +143,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
             mediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             wifiLock.acquire();
             playing = true;
+            preparing = false;
             showNotification();
             stopParser();
             startParser();
@@ -161,6 +163,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
                         prepared = true;
                         mp.start();
                         playing = true;
+                        preparing = false;
                         onLoaded();
                         onPlaying();
                         stopParser();
@@ -169,6 +172,7 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
                 });
                 mediaPlayer.setOnErrorListener(this);
                 mediaPlayer.prepareAsync();
+                preparing = true;
                 onLoading();
             } catch (IOException e) {
                 onStopped();
@@ -192,18 +196,23 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         playing = false;
     }
 
-    public void stop() {
+    public void stop(boolean fromReceiver) {
         mediaPlayer.reset();
         prepared = false;
         playing = false;
+        preparing = false;
 
-        onLoaded();
-        onStopped();
+        if(!fromReceiver) {
+            onLoaded();
+            onStopped();
+        }
+
         stopParser();
         hideNotification();
         wifiLock.setReferenceCounted(false);
         wifiLock.release();
         if (binds == 0) stopSelf();
+        Log.e("91x", "will be shutting down!\n");
     }
 
     public boolean isPlaying() {
@@ -304,12 +313,12 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
     public void updateSongInfo(SongInfo songInfo) {
 
         if (songStack.size() > 0
-                && songInfo.trackId == songStack.get(songStack.size() - 1).trackId) {
+                && songInfo.trackId == songStack.get(0).trackId) {
             new Parser(this, currentSong.songName, currentSong.artistName).execute();
             return;
         }
         if (songStack.size() > 1
-                && songInfo.trackId == songStack.get(songStack.size() - 2).trackId) {
+                && songInfo.trackId == songStack.get(1).trackId) {
             new Parser(this, currentSong.songName, currentSong.artistName).execute();
             return;
         }
@@ -319,8 +328,9 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
             CardAdapter.playingTopCard = true;
             songStack.insert(songInfo);
             currentSong = songInfo;
+            showNotification();
         } else {
-            if (sharedPreferences.getBoolean("muteAds", new Boolean(true))) {
+            if (sharedPreferences.getBoolean("muteAds", true)) {
                 noSound();
             }
 
@@ -350,6 +360,14 @@ public class RadioService extends Service implements MediaPlayer.OnErrorListener
         }
         binds--;
         return super.onUnbind(intent);
+    }
+
+    public boolean isPreparing() {
+        return preparing;
+    }
+
+    public SongInfo getCurrentSong() {
+        return currentSong;
     }
 
 }

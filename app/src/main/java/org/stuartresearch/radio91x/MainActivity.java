@@ -216,6 +216,11 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     public void onResume() {
         super.onResume();
         AudioPlayerBroadcastReceiver.setActivity(this);
+        if (bound && localBinder.getService().isPlaying()) {
+            streamPlaying();
+        } else {
+            streamStopped();
+        }
     }
 
     @Override
@@ -257,6 +262,11 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         bound = true;
         localBinder.getService().songStack.setOnInsertListener(this);
         cardAdapter.setSongInfoStack(localBinder.getService().songStack);
+        if (!localBinder.getService().isPreparing()) {
+            progressBar.setIndeterminate(false);
+            progressBar.setVisibility(View.GONE);
+        }
+        onInsert(localBinder.getService().getCurrentSong());
     }
 
     @Override
@@ -276,7 +286,7 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
             localBinder.getService().play();
             streamPlaying();
         } else {
-            localBinder.getService().stop();
+            localBinder.getService().stop(false);
             streamStopped();
         }
     }
@@ -284,15 +294,19 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
     public void streamPlaying() {
         playPause.setTag("pause");
         playPause.setImageResource(R.drawable.ic_pause_circle_outline_black_36dp);
-        CardAdapter.playingTopCard = true;
-        cardAdapter.notifyItemChanged(0);
+        if(!showingFavs) {
+            CardAdapter.playingTopCard = true;
+            cardAdapter.notifyItemChanged(0);
+        }
     }
 
     public void streamStopped() {
         playPause.setTag("play");
         playPause.setImageResource(R.drawable.ic_play_circle_outline_black_36dp);
-        CardAdapter.playingTopCard = false;
-        cardAdapter.notifyItemChanged(0);
+        if(!showingFavs) {
+            CardAdapter.playingTopCard = false;
+            cardAdapter.notifyItemChanged(0);
+        }
     }
 
     public void streamLoading() {

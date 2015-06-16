@@ -45,6 +45,11 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
     public void setSongInfoStack(SongStack stack) {
         this.songInfoStack = stack;
+        if (stack.size() > 0 && stack.get(0).trackId == -666) {
+            playingTopCard = false;
+        } else {
+            playingTopCard = true;
+        }
         notifyDataSetChanged();
     }
 
@@ -106,7 +111,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
         return new SongInfoHolder(itemView);
     }
 
-    public static class SongInfoHolder extends RecyclerView.ViewHolder {
+    public class SongInfoHolder extends RecyclerView.ViewHolder {
         TextView songText;
         TextView artistText;
         ImageView albumImage;
@@ -123,7 +128,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
             songText = (TextView) v.findViewById(R.id.songNameTextView);
             artistText = (TextView) v.findViewById(R.id.artistNameTextView);
             albumImage = (ImageView) v.findViewById(R.id.albumImageView);
-            context = v.getContext();
+            context = mainActivity;
             background = v.findViewById(R.id.playingBackground);
             equalizer = (ImageView) v.findViewById(R.id.playingEqualizer);
             buySong = (ImageView) v.findViewById(R.id.buySongButton);
@@ -212,7 +217,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                 }
             };
             int res = audioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
-            SnackbarManager.show(Snackbar.with(context).text(String
+            SnackbarManager.show(Snackbar.with(v.getContext()).text(String
                     .format("Playing a preview of %s by %s.",
                             songInfoStack.get(i).songName,
                             songInfoStack.get(i).artistName))
@@ -232,8 +237,8 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                     .eventListener(new EventListener() {
                         @Override
                         public void onShow(Snackbar snackbar) {
-                            ((MainActivity) context).hideToolbar();
-                            ((MainActivity) context).showingSnackbar = true;
+                            mainActivity.hideToolbar();
+                            mainActivity.showingSnackbar = true;
                         }
 
                         @Override
@@ -248,8 +253,8 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
                         @Override
                         public void onDismiss(Snackbar snackbar) {
-                            ((MainActivity) context).showToolbar();
-                            ((MainActivity) context).showingSnackbar = false;
+                            mainActivity.showToolbar();
+                            mainActivity.showingSnackbar = false;
                             sample.release();
                         }
 
@@ -263,6 +268,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
                         }
                     }));
+
             context.sendBroadcast(new Intent("org.stuartresearch.radio91x.NOSOUND"));
             try {
                 sample.setDataSource(context, Uri.parse(songInfoStack.get(i).songSample));
@@ -321,7 +327,7 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                 snackString = String.format(context.getResources().getString(R.string.favoriteSaved), songInfo.songName, songInfo.artistName);
                 dataSource.favorite(songInfo);
             }
-            SnackbarManager.show(Snackbar.with(context).text(snackString)
+            SnackbarManager.show(Snackbar.with(v.getContext()).text(snackString)
                     .actionColor(context.getResources().getColor(R.color.accent))
                     .color(context.getResources().getColor(R.color.primary))
                     .duration(Snackbar.SnackbarDuration.LENGTH_SHORT)
@@ -344,8 +350,8 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
                     .eventListener(new EventListener() {
                         @Override
                         public void onShow(Snackbar snackbar) {
-                            ((MainActivity) context).hideToolbar();
-                            ((MainActivity) context).showingSnackbar = true;
+                            mainActivity.hideToolbar();
+                            mainActivity.showingSnackbar = true;
                         }
 
                         @Override
@@ -360,8 +366,8 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.SongInfoHolder
 
                         @Override
                         public void onDismiss(Snackbar snackbar) {
-                            ((MainActivity) context).showToolbar();
-                            ((MainActivity) context).showingSnackbar = false;
+                            mainActivity.showToolbar();
+                            mainActivity.showingSnackbar = false;
                         }
 
                         @Override

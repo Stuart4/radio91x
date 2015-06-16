@@ -38,6 +38,10 @@ public class AudioPlayerBroadcastReceiver extends BroadcastReceiver implements S
                 mainActivity.streamPlaying();
             } else if (action.equals("org.stuartresearch.radio91x.STOPPED")) {
                 mainActivity.streamStopped();
+            } else if (action.equals("org.stuartresearch.radio91x.PLAY")) {
+                mainActivity.streamPlaying();
+            } else if (action.equals("org.stuartresearch.radio91x.PAUSE")) {
+                mainActivity.streamStopped();
             }
         }
 
@@ -45,13 +49,21 @@ public class AudioPlayerBroadcastReceiver extends BroadcastReceiver implements S
             if (action.equals("org.stuartresearch.radio91x.PLAY")) {
                 radioService.play();
             } else if (action.equals("org.stuartresearch.radio91x.PAUSE")) {
-                radioService.stop();
+                radioService.stop(true);
+                if (mainActivity != null) {
+                    mainActivity.streamLoaded();
+                    mainActivity.streamStopped();
+                }
             } else if (action.equals("org.stuartresearch.radio91x.NOSOUND")) {
                 radioService.noSound();
             } else if (action.equals("org.stuartresearch.radio91x.NOSOUND")) {
                 radioService.sound();
             } else if (action.equals("android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY")) {
-                radioService.stop();
+                radioService.stop(true);
+                if (mainActivity != null) {
+                    mainActivity.streamLoaded();
+                    mainActivity.streamStopped();
+                }
             }
         }
     }
